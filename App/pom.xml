@@ -22,6 +22,12 @@
         </dependency>
 
         <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>3.4</version>
+        </dependency>
+
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <version>4.13.2</version>
@@ -36,8 +42,16 @@
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>21</release>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.1.0</version>
+                <configuration>
+                    <mainClass>com.trungtam.AppLauncher</mainClass>
                 </configuration>
             </plugin>
         </plugins>
