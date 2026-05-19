@@ -2,11 +2,15 @@ package com.trungtam;
 
 import com.formdev.flatlaf.FlatLightLaf;
 import com.trungtam.ui.MainWindow;
+import com.trungtam.ui.UiTheme;
 import com.trungtam.ui.hocvien.HocVienWindow;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * Cửa sổ khởi động — chọn module trước khi vào hệ thống.
@@ -16,26 +20,30 @@ public class AppLauncher extends JFrame {
     public AppLauncher() {
         setTitle("Hệ Thống Quản Lý Trung Tâm Đào Tạo");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(520, 340);
+        setSize(560, 360);
+        setMinimumSize(new Dimension(480, 320));
         setLocationRelativeTo(null);
-        setResizable(false);
+        setResizable(true);
         setContentPane(buildContent());
     }
 
     private JPanel buildContent() {
         JPanel root = new JPanel(new BorderLayout(0, 0));
-        root.setBackground(new Color(0xF5F5F5));
+        root.setBackground(UiTheme.APP_BG);
 
-        // Header
+        // ── Header ────────────────────────────────────────────────────────────
         JPanel header = new JPanel(new BorderLayout());
-        header.setBackground(new Color(0x1A237E));
-        header.setBorder(new EmptyBorder(24, 32, 24, 32));
+        header.setBackground(UiTheme.PRIMARY);
+        header.setBorder(new EmptyBorder(22, 32, 22, 32));
+
         JLabel lblTitle = new JLabel("TRUNG TÂM ĐÀO TẠO");
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 20));
+        lblTitle.setFont(UiTheme.TITLE_L);
         lblTitle.setForeground(Color.WHITE);
+
         JLabel lblSub = new JLabel("Chọn module để bắt đầu làm việc");
-        lblSub.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        lblSub.setForeground(new Color(0xC5CAE9));
+        lblSub.setFont(UiTheme.BODY);
+        lblSub.setForeground(UiTheme.SIDEBAR_FG);
+
         JPanel headerText = new JPanel(new GridLayout(2, 1, 0, 4));
         headerText.setOpaque(false);
         headerText.add(lblTitle);
@@ -43,35 +51,43 @@ public class AppLauncher extends JFrame {
         header.add(headerText, BorderLayout.CENTER);
         root.add(header, BorderLayout.NORTH);
 
-        // Buttons
-        JPanel btnPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        // ── Module buttons ────────────────────────────────────────────────────
+        JPanel btnPanel = new JPanel(new GridLayout(1, 2, 16, 0));
         btnPanel.setOpaque(false);
-        btnPanel.setBorder(new EmptyBorder(36, 40, 36, 40));
+        btnPanel.setBorder(new EmptyBorder(32, 36, 32, 36));
+
         btnPanel.add(buildModuleButton(
-            "QUẢN LÝ GIÁO VIÊN",
-            "Điểm danh, nhập điểm,\nlịch giảng dạy, thông báo",
-            new Color(0x1A237E),
-            e -> { dispose(); new MainWindow().setVisible(true); }
-        ));
+                "QUẢN LÝ GIÁO VIÊN",
+                "Điểm danh, nhập điểm,\nlịch giảng dạy, thông báo",
+                UiTheme.PRIMARY,
+                e -> {
+                    dispose();
+                    new MainWindow().setVisible(true);
+                }));
+
         btnPanel.add(buildModuleButton(
-            "QUẢN LÝ HỌC VIÊN",
-            "Danh sách, đăng ký lớp,\nxem điểm, học phí",
-            new Color(0x1B5E20),
-            e -> { dispose(); new HocVienWindow().setVisible(true); }
-        ));
+                "QUẢN LÝ HỌC VIÊN",
+                "Danh sách, đăng ký lớp,\nxem điểm, học phí",
+                UiTheme.SECONDARY,
+                e -> {
+                    dispose();
+                    new HocVienWindow().setVisible(true);
+                }));
+
         root.add(btnPanel, BorderLayout.CENTER);
 
-        // Footer
-        JLabel footer = new JLabel("Version 1.0  |  FlatLaf UI", SwingConstants.CENTER);
-        footer.setFont(new Font("Segoe UI", Font.ITALIC, 11));
-        footer.setForeground(Color.GRAY);
+        // ── Footer ────────────────────────────────────────────────────────────
+        JLabel footer = new JLabel("Phiên bản 1.0  |  FlatLaf UI", SwingConstants.CENTER);
+        footer.setFont(UiTheme.CAPTION_I);
+        footer.setForeground(UiTheme.TEXT_MUTED);
         footer.setBorder(new EmptyBorder(0, 0, 12, 0));
         root.add(footer, BorderLayout.SOUTH);
+
         return root;
     }
 
     private JButton buildModuleButton(String title, String desc, Color color,
-                                       java.awt.event.ActionListener action) {
+            ActionListener action) {
         JButton btn = new JButton();
         btn.setLayout(new BorderLayout(0, 8));
         btn.setBackground(color);
@@ -79,28 +95,31 @@ public class AppLauncher extends JFrame {
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        btn.setBorder(new EmptyBorder(20, 16, 20, 16));
+        btn.setBorder(new EmptyBorder(20, 18, 20, 18));
+        btn.setOpaque(true);
 
         JLabel lblTitle = new JLabel(title, SwingConstants.CENTER);
-        lblTitle.setFont(new Font("Segoe UI", Font.BOLD, 14));
+        lblTitle.setFont(UiTheme.TITLE_S);
         lblTitle.setForeground(Color.WHITE);
 
         JLabel lblDesc = new JLabel(
-            "<html><center>" + desc.replace("\n", "<br>") + "</center></html>",
-            SwingConstants.CENTER);
-        lblDesc.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        lblDesc.setForeground(new Color(255, 255, 255, 180));
+                "<html><center>" + desc.replace("\n", "<br>") + "</center></html>",
+                SwingConstants.CENTER);
+        lblDesc.setFont(UiTheme.CAPTION);
+        lblDesc.setForeground(new Color(255, 255, 255, 190));
 
         btn.add(lblTitle, BorderLayout.CENTER);
         btn.add(lblDesc, BorderLayout.SOUTH);
         btn.addActionListener(action);
 
-        // Hover effect
-        btn.addMouseListener(new java.awt.event.MouseAdapter() {
-            @Override public void mouseEntered(java.awt.event.MouseEvent e) {
-                btn.setBackground(color.brighter());
+        btn.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                btn.setBackground(color.darker());
             }
-            @Override public void mouseExited(java.awt.event.MouseEvent e) {
+
+            @Override
+            public void mouseExited(MouseEvent e) {
                 btn.setBackground(color);
             }
         });
@@ -110,7 +129,7 @@ public class AppLauncher extends JFrame {
     public static void main(String[] args) {
         try {
             FlatLightLaf.setup();
-            UIManager.put("TabbedPane.focusColor", new Color(0, 0, 0, 0));
+            UiTheme.applyGlobalTokens();
         } catch (Exception e) {
             e.printStackTrace();
         }

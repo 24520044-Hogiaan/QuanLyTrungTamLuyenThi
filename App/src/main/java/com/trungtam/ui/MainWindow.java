@@ -4,109 +4,62 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.trungtam.ui.giaovien.*;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 
 public class MainWindow extends JFrame {
 
-    private static final Color SIDEBAR_BG  = new Color(0x1A237E); // xanh navy đậm
-    private static final Color SIDEBAR_SEL = new Color(0x1565C0); // xanh sáng hơn khi chọn
-    private static final Color SIDEBAR_FG  = new Color(0xC5CAE9); // trắng ngà
-    private static final Color ACCENT_BAR  = new Color(0x90CAF9); // thanh accent xanh nhạt
-
     public MainWindow() {
-        setTitle("Quan Ly Giao Vien - Trung Tam Dao Tao");
+        setTitle("Quản Lý Giáo Viên – Trung Tâm Đào Tạo");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(1280, 800);
+        setSize(1300, 820);
+        setMinimumSize(new Dimension(1024, 640));
         setLocationRelativeTo(null);
-        setJMenuBar(buildMenuBar());
-        add(buildTabbedPane());
-    }
 
-    private JMenuBar buildMenuBar() {
-        JMenuBar bar = new JMenuBar();
-        JMenu menu = new JMenu("Module");
-        menu.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(UiTheme.APP_BG);
 
-        JMenuItem miGV = new JMenuItem("Quan Ly Giao Vien (dang mo)");
-        miGV.setEnabled(false);
-
-        JMenuItem miHV = new JMenuItem("Quan Ly Hoc Vien");
-        miHV.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        miHV.addActionListener(e ->
-            new com.trungtam.ui.hocvien.HocVienWindow().setVisible(true));
-
-        menu.add(miGV);
-        menu.addSeparator();
-        menu.add(miHV);
-        bar.add(menu);
-        return bar;
-    }
-
-    private JTabbedPane buildTabbedPane() {
-        JTabbedPane tabs = new JTabbedPane(JTabbedPane.LEFT);
-        tabs.setBackground(SIDEBAR_BG);
-
+        // ── Sidebar ───────────────────────────────────────────────────────────
+        SidebarPanel sidebar = new SidebarPanel(UiTheme.PRIMARY);
+        sidebar.addSection("Chức Năng Chính");
         String[] titles = {
-            "DANH SÁCH GV", "ĐIỂM DANH", "NHẬP ĐIỂM",
-            "LỊCH GIẢNG DẠY", "THỐNG KÊ LỚP", "GỬI THÔNG BÁO"
+                "Danh Sách GV", "Điểm Danh", "Nhập Điểm",
+                "Lịch Giảng Dạy", "Thống Kê Lớp", "Gửi Thông Báo"
         };
+        for (String t : titles)
+            sidebar.addItem(t);
+
+        // ── Content area (CardLayout) ─────────────────────────────────────────
         JPanel[] panels = {
-            new GiaoVienPanel(), new DiemDanhPanel(), new NhapDiemPanel(),
-            new LichGiangDayPanel(), new ThongKeLopPanel(), new GuiThongBaoPanel()
+                new GiaoVienPanel(), new DiemDanhPanel(), new NhapDiemPanel(),
+                new LichGiangDayPanel(), new ThongKeLopPanel(), new GuiThongBaoPanel()
         };
 
-        for (int i = 0; i < titles.length; i++) {
-            tabs.addTab(null, panels[i]);
-            tabs.setTabComponentAt(i, buildTabLabel(titles[i]));
+        CardLayout cards = new CardLayout();
+        JPanel contentArea = new JPanel(cards);
+        contentArea.setBackground(UiTheme.APP_BG);
+        for (int i = 0; i < panels.length; i++) {
+            contentArea.add(panels[i], String.valueOf(i));
         }
+        cards.show(contentArea, "0");
 
-        tabs.addChangeListener(e -> updateTabHighlight(tabs, titles.length));
-        updateTabHighlight(tabs, titles.length);
-        return tabs;
-    }
+        sidebar.setSelectionListener(idx -> cards.show(contentArea, String.valueOf(idx)));
 
-    private JPanel buildTabLabel(String title) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(true);
-        panel.setPreferredSize(new Dimension(158, 46));
+        // Wrap sidebar in a scroll pane so it works on small screens
+        JScrollPane sidebarScroll = new JScrollPane(sidebar,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sidebarScroll.setBorder(null);
+        sidebarScroll.getVerticalScrollBar().setUnitIncrement(16);
 
-        JLabel lbl = new JLabel(title);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        lbl.setBorder(new EmptyBorder(0, 14, 0, 0));
-        panel.add(lbl, BorderLayout.CENTER);
-        return panel;
-    }
-
-    private void updateTabHighlight(JTabbedPane tabs, int count) {
-        int selected = tabs.getSelectedIndex();
-        for (int i = 0; i < count; i++) {
-            if (!(tabs.getTabComponentAt(i) instanceof JPanel panel)) continue;
-            JLabel lbl = (JLabel) panel.getComponent(0);
-
-            if (i == selected) {
-                // Tab chọn: xanh sáng hơn + thanh accent + chữ trắng sáng
-                panel.setBackground(SIDEBAR_SEL);
-                panel.setBorder(new MatteBorder(0, 4, 0, 0, ACCENT_BAR));
-                lbl.setForeground(Color.WHITE);
-                lbl.setBorder(new EmptyBorder(0, 10, 0, 0));
-            } else {
-                // Tab thường: xanh đậm + chữ trắng ngà
-                panel.setBackground(SIDEBAR_BG);
-                panel.setBorder(null);
-                lbl.setForeground(SIDEBAR_FG);
-                lbl.setBorder(new EmptyBorder(0, 14, 0, 0));
-            }
-        }
+        root.add(sidebarScroll, BorderLayout.WEST);
+        root.add(contentArea, BorderLayout.CENTER);
+        setContentPane(root);
     }
 
     public static void main(String[] args) {
         try {
             FlatLightLaf.setup();
-            UIManager.put("TabbedPane.tabHeight", 48);
-            // Xóa focus ring trắng mặc định của FlatLaf quanh tab đang chọn
-            UIManager.put("TabbedPane.focusColor", new Color(0, 0, 0, 0));
-            UIManager.put("TabbedPane.selectedBackground", SIDEBAR_BG);
+            UiTheme.applyGlobalTokens();
         } catch (Exception e) {
             e.printStackTrace();
         }

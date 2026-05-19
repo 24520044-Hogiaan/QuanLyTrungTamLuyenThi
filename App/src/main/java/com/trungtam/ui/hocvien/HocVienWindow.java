@@ -1,101 +1,82 @@
 package com.trungtam.ui.hocvien;
 
 import com.formdev.flatlaf.FlatLightLaf;
+import com.trungtam.ui.SidebarPanel;
+import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
-import javax.swing.border.*;
 import java.awt.*;
 
 /**
- * Cửa sổ cổng học viên — sidebar xanh lá để phân biệt với module Giáo Viên (xanh navy).
+ * Cổng học viên — sidebar xanh lá, content area dùng CardLayout.
  */
 public class HocVienWindow extends JFrame {
 
-    private static final Color SIDEBAR_BG  = new Color(0x1B5E20);
-    private static final Color SIDEBAR_SEL = new Color(0x2E7D32);
-    private static final Color SIDEBAR_FG  = new Color(0xC8E6C9);
-    private static final Color ACCENT_BAR  = new Color(0xA5D6A7);
-
     public HocVienWindow() {
-        setTitle("Cong Hoc Vien - Trung Tam Dao Tao");
+        setTitle("Cổng Học Viên – Trung Tâm Đào Tạo");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-        setSize(1280, 800);
+        setSize(1300, 820);
+        setMinimumSize(new Dimension(1024, 640));
         setLocationRelativeTo(null);
-        add(buildTabbedPane());
-    }
 
-    private JTabbedPane buildTabbedPane() {
-        JTabbedPane tabs = new JTabbedPane(JTabbedPane.LEFT);
-        tabs.setBackground(SIDEBAR_BG);
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBackground(UiTheme.APP_BG);
 
+        // ── Sidebar ───────────────────────────────────────────────────────────
+        SidebarPanel sidebar = new SidebarPanel(UiTheme.SECONDARY);
+        sidebar.addSection("Cổng Học Viên");
         String[] titles = {
-            "HỒ SƠ CÁ NHÂN",
-            "TRA CỨU KHÓA HỌC",
-            "ĐĂNG KÝ LỚP",
-            "THỜI KHÓA BIỂU",
-            "XEM ĐIỂM",
-            "BẢNG XẾP HẠNG",
-            "TÀI LIỆU",
-            "THANH TOÁN",
-            "ĐÁNH GIÁ"
+                "Hồ Sơ Cá Nhân",
+                "Tra Cứu Khóa Học",
+                "Đăng Ký Lớp",
+                "Thời Khóa Biểu",
+                "Xem Điểm",
+                "Bảng Xếp Hạng",
+                "Tài Liệu",
+                "Thanh Toán",
+                "Đánh Giá"
         };
+        for (String t : titles)
+            sidebar.addItem(t);
+
+        // ── Content area (CardLayout) ─────────────────────────────────────────
         JPanel[] panels = {
-            new HoSoCaNhanPanel(),
-            new TraCuuKhoaHocPanel(),
-            new DangKyChuyenHuyPanel(),
-            new ThoiKhoaBieuHVPanel(),
-            new XemDiemHVPanel(),
-            new BangXepHangPanel(),
-            new TaiLieuPanel(),
-            new ThanhToanHocPhiPanel(),
-            new DanhGiaPanel()
+                new HoSoCaNhanPanel(),
+                new TraCuuKhoaHocPanel(),
+                new DangKyChuyenHuyPanel(),
+                new ThoiKhoaBieuHVPanel(),
+                new XemDiemHVPanel(),
+                new BangXepHangPanel(),
+                new TaiLieuPanel(),
+                new ThanhToanHocPhiPanel(),
+                new DanhGiaPanel()
         };
 
-        for (int i = 0; i < titles.length; i++) {
-            tabs.addTab(null, panels[i]);
-            tabs.setTabComponentAt(i, buildTabLabel(titles[i]));
+        CardLayout cards = new CardLayout();
+        JPanel contentArea = new JPanel(cards);
+        contentArea.setBackground(UiTheme.APP_BG);
+        for (int i = 0; i < panels.length; i++) {
+            contentArea.add(panels[i], String.valueOf(i));
         }
+        cards.show(contentArea, "0");
 
-        tabs.addChangeListener(e -> updateTabHighlight(tabs, titles.length));
-        updateTabHighlight(tabs, titles.length);
-        return tabs;
-    }
+        sidebar.setSelectionListener(idx -> cards.show(contentArea, String.valueOf(idx)));
 
-    private JPanel buildTabLabel(String title) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setOpaque(true);
-        panel.setPreferredSize(new Dimension(158, 44));
-        JLabel lbl = new JLabel(title);
-        lbl.setFont(new Font("Segoe UI", Font.BOLD, 12));
-        lbl.setBorder(new EmptyBorder(0, 14, 0, 0));
-        panel.add(lbl, BorderLayout.CENTER);
-        return panel;
-    }
+        JScrollPane sidebarScroll = new JScrollPane(sidebar,
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        sidebarScroll.setBorder(null);
+        sidebarScroll.getVerticalScrollBar().setUnitIncrement(16);
 
-    private void updateTabHighlight(JTabbedPane tabs, int count) {
-        int selected = tabs.getSelectedIndex();
-        for (int i = 0; i < count; i++) {
-            if (!(tabs.getTabComponentAt(i) instanceof JPanel panel)) continue;
-            JLabel lbl = (JLabel) panel.getComponent(0);
-            if (i == selected) {
-                panel.setBackground(SIDEBAR_SEL);
-                panel.setBorder(new MatteBorder(0, 4, 0, 0, ACCENT_BAR));
-                lbl.setForeground(Color.WHITE);
-                lbl.setBorder(new EmptyBorder(0, 10, 0, 0));
-            } else {
-                panel.setBackground(SIDEBAR_BG);
-                panel.setBorder(null);
-                lbl.setForeground(SIDEBAR_FG);
-                lbl.setBorder(new EmptyBorder(0, 14, 0, 0));
-            }
-        }
+        root.add(sidebarScroll, BorderLayout.WEST);
+        root.add(contentArea, BorderLayout.CENTER);
+        setContentPane(root);
     }
 
     public static void main(String[] args) {
         try {
             FlatLightLaf.setup();
-            UIManager.put("TabbedPane.tabHeight", 46);
-            UIManager.put("TabbedPane.focusColor", new Color(0, 0, 0, 0));
+            UiTheme.applyGlobalTokens();
         } catch (Exception e) {
             e.printStackTrace();
         }
