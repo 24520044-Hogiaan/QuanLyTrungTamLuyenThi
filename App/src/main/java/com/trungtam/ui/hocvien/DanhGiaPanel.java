@@ -72,6 +72,9 @@ public class DanhGiaPanel extends JPanel {
         spCS.getVerticalScrollBar().setUnitIncrement(16);
         addRow(form, g, 9, "Nhận xét:", spCS);
 
+        add(UiComponents.scrollPane(form), BorderLayout.CENTER);
+
+        // Nút Gửi đặt ngoài scroll pane → luôn hiển thị dù cửa sổ nhỏ
         JButton btnGui = UiComponents.primaryButton("Gửi Đánh Giá", UiTheme.SECONDARY);
         btnGui.addActionListener(e -> {
             if (starKhoaHoc[0] == 0 || starGiangVien[0] == 0) {
@@ -85,15 +88,10 @@ public class DanhGiaPanel extends JPanel {
                     "Gửi Thành Công", JOptionPane.INFORMATION_MESSAGE);
         });
 
-        g.gridx = 0;
-        g.gridy = 10;
-        g.gridwidth = 2;
-        g.anchor = GridBagConstraints.EAST;
-        g.fill = GridBagConstraints.NONE;
-        g.weightx = 0;
-        form.add(btnGui, g);
-
-        add(UiComponents.scrollPane(form), BorderLayout.CENTER);
+        JPanel bottomBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 8));
+        bottomBar.setBackground(UiTheme.APP_BG);
+        bottomBar.add(btnGui);
+        add(bottomBar, BorderLayout.SOUTH);
     }
 
     private JPanel buildRadioStars(int[] storage) {
