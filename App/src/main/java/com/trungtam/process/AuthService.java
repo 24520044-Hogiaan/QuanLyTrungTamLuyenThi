@@ -7,16 +7,18 @@ public class AuthService {
     private final TaiKhoanDAO taiKhoanDAO = new TaiKhoanDAO();
 
     public TaiKhoan loginByRole(String username, String password, int roleId) {
+        TaiKhoan tk;
         try {
-            TaiKhoan tk = taiKhoanDAO.findByUsername(username);
-            if (tk == null) return null;
-            if (!password.equals(tk.getMatKhau())) return null;
-            if (tk.getMaVaiTro() != roleId) return null;
-            taiKhoanDAO.updateLastLogin(tk.getMaTaiKhoan());
-            return tk;
+            tk = taiKhoanDAO.findByUsername(username);
         } catch (Exception e) {
-            e.printStackTrace();
-            return null;
+            throw new RuntimeException("Không thể kết nối CSDL: " + e.getMessage(), e);
         }
+        if (tk == null) return null;
+        if (!password.equals(tk.getMatKhau())) return null;
+        if (tk.getMaVaiTro() != roleId) return null;
+        try {
+            taiKhoanDAO.updateLastLogin(tk.getMaTaiKhoan());
+        } catch (Exception ignored) {}
+        return tk;
     }
 }

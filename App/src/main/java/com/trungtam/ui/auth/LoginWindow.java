@@ -17,8 +17,8 @@ public class LoginWindow extends JFrame {
     public LoginWindow(int roleId) {
         setTitle("Đăng nhập");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(480, 380);
-        setMinimumSize(new Dimension(420, 340));
+        setSize(480, 420);
+        setMinimumSize(new Dimension(400, 380));
         setLocationRelativeTo(null);
         setResizable(true);
         setContentPane(buildContent(roleId));
@@ -28,12 +28,17 @@ public class LoginWindow extends JFrame {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(UiTheme.APP_BG);
 
-        // The card with a fixed max size, centered via GridBagLayout
-        JPanel card = new JPanel(new BorderLayout(0, 16));
+        JPanel card = new JPanel(new BorderLayout(0, 16)) {
+            @Override
+            public Dimension getPreferredSize() {
+                Dimension d = super.getPreferredSize();
+                return new Dimension(350, d.height);
+            }
+        };
         card.setBackground(UiTheme.CARD_BG);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
-                new EmptyBorder(24, 28, 20, 28)));
+                new EmptyBorder(28, 36, 24, 36)));
 
         // Header
         JPanel header = new JPanel();
@@ -62,8 +67,24 @@ public class LoginWindow extends JFrame {
 
         userField.setFont(UiTheme.BODY);
         passField.setFont(UiTheme.BODY);
+        userField.setPreferredSize(new Dimension(150, 32));
+        passField.setPreferredSize(new Dimension(150, 32));
         userField.putClientProperty("JTextField.placeholderText", "Nhập tên tài khoản");
         passField.putClientProperty("JTextField.placeholderText", "Nhập mật khẩu");
+
+        // Password toggle
+        JCheckBox showPassToggle = new JCheckBox("Hiện mật khẩu");
+        showPassToggle.setFont(UiTheme.CAPTION);
+        showPassToggle.setForeground(UiTheme.TEXT_MUTED);
+        showPassToggle.setOpaque(false);
+        showPassToggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        showPassToggle.addActionListener(e -> {
+            if (showPassToggle.isSelected()) {
+                passField.setEchoChar((char) 0);
+            } else {
+                passField.setEchoChar('\u2022');
+            }
+        });
 
         JPanel form = new JPanel(new GridBagLayout());
         form.setOpaque(false);
@@ -81,8 +102,11 @@ public class LoginWindow extends JFrame {
         g.insets = new Insets(8, 0, 4, 0);
         form.add(createFieldLabel("Mật khẩu"), g);
         g.gridy = 3;
-        g.insets = new Insets(4, 0, 4, 0);
+        g.insets = new Insets(4, 0, 2, 0);
         form.add(passField, g);
+        g.gridy = 4;
+        g.insets = new Insets(0, 0, 4, 0);
+        form.add(showPassToggle, g);
 
         // Action bar
         JPanel actionBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 8));
@@ -98,14 +122,26 @@ public class LoginWindow extends JFrame {
         loginButton.addActionListener(e -> {
             String username = userField.getText().trim();
             String password = new String(passField.getPassword());
-            TaiKhoan tk = authController.dangNhap(username, password, roleId);
+
+            TaiKhoan tk;
+            try {
+                tk = authController.dangNhap(username, password, roleId);
+            } catch (RuntimeException ex) {
+                JOptionPane.showMessageDialog(this,
+                        ex.getMessage(),
+                        "Lỗi kết nối",
+                        JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+
             if (tk == null) {
                 JOptionPane.showMessageDialog(this,
-                        "Đăng nhập thất bại hoặc sai vai trò.",
-                        "Không thể đăng nhập",
+                        "Sai tên tài khoản, mật khẩu hoặc vai trò.",
+                        "Đăng nhập thất bại",
                         JOptionPane.WARNING_MESSAGE);
                 return;
             }
+
             dispose();
             if (roleId == RoleSelectionWindow.ROLE_GIAOVIEN) {
                 new MainWindow().setVisible(true);
@@ -114,11 +150,15 @@ public class LoginWindow extends JFrame {
             }
         });
 
-        // Center the card in the window using GridBagLayout wrapper
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setOpaque(false);
         wrapper.setBorder(new EmptyBorder(16, 24, 16, 24));
-        wrapper.add(card);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.anchor = GridBagConstraints.CENTER;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        wrapper.add(card, gbc);
 
         root.add(wrapper, BorderLayout.CENTER);
         return root;

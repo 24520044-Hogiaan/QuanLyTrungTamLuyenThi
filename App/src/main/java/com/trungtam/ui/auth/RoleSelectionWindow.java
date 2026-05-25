@@ -25,14 +25,10 @@ public class RoleSelectionWindow extends JFrame {
         setLocationRelativeTo(null);
         setResizable(true);
 
-        JPanel root = new JPanel(new BorderLayout(0, 0));
-        root.setBackground(UiTheme.APP_BG);
-
-        // ── Header ──────────────────────────────────────────────────────────
-        JPanel header = new JPanel();
-        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
-        header.setBackground(UiTheme.APP_BG);
-        header.setBorder(new EmptyBorder(28, 32, 12, 32));
+        // Group header + cards + footer in one vertical block, centered in window
+        JPanel content = new JPanel();
+        content.setLayout(new BoxLayout(content, BoxLayout.Y_AXIS));
+        content.setOpaque(false);
 
         JLabel lblTitle = new JLabel("Chọn vai trò đăng nhập");
         lblTitle.setFont(UiTheme.TITLE_L);
@@ -44,14 +40,16 @@ public class RoleSelectionWindow extends JFrame {
         lblSub.setForeground(UiTheme.TEXT_MUTED);
         lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        header.add(lblTitle);
-        header.add(Box.createVerticalStrut(6));
-        header.add(lblSub);
-        root.add(header, BorderLayout.NORTH);
+        content.add(lblTitle);
+        content.add(Box.createVerticalStrut(6));
+        content.add(lblSub);
+        content.add(Box.createVerticalStrut(24));
 
-        // ── Role cards (centered, max-size constrained) ─────────────────────
         JPanel cardPanel = new JPanel(new GridLayout(1, 2, 20, 0));
         cardPanel.setOpaque(false);
+        cardPanel.setPreferredSize(new Dimension(440, 180));
+        cardPanel.setMaximumSize(new Dimension(520, 200));
+        cardPanel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         cardPanel.add(buildRoleCard(
                 "Giáo Viên",
@@ -65,26 +63,20 @@ public class RoleSelectionWindow extends JFrame {
                 UiTheme.SECONDARY,
                 () -> onRoleSelected.accept(ROLE_HOCVIEN)));
 
-        // Wrap in a centering panel so cards don't stretch at large window sizes
-        JPanel centerWrapper = new JPanel(new GridBagLayout());
-        centerWrapper.setOpaque(false);
-        centerWrapper.setBorder(new EmptyBorder(16, 32, 28, 32));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.NONE;
-        gbc.weightx = 1;
-        gbc.weighty = 1;
-        gbc.anchor = GridBagConstraints.CENTER;
-        cardPanel.setPreferredSize(new Dimension(440, 180));
-        cardPanel.setMinimumSize(new Dimension(300, 140));
-        centerWrapper.add(cardPanel, gbc);
-        root.add(centerWrapper, BorderLayout.CENTER);
+        content.add(cardPanel);
+        content.add(Box.createVerticalStrut(16));
 
-        // ── Footer ──────────────────────────────────────────────────────────
-        JLabel footer = new JLabel("Trung Tâm Đào Tạo  •  Phiên bản 1.0", SwingConstants.CENTER);
+        JLabel footer = new JLabel("Trung Tâm Đào Tạo  •  Phiên bản 1.0");
         footer.setFont(UiTheme.CAPTION_I);
         footer.setForeground(UiTheme.TEXT_MUTED);
-        footer.setBorder(new EmptyBorder(0, 0, 16, 0));
-        root.add(footer, BorderLayout.SOUTH);
+        footer.setAlignmentX(Component.CENTER_ALIGNMENT);
+        content.add(footer);
+
+        // Center the whole block in the window
+        JPanel root = new JPanel(new GridBagLayout());
+        root.setBackground(UiTheme.APP_BG);
+        root.setBorder(new EmptyBorder(24, 32, 24, 32));
+        root.add(content);
 
         setContentPane(root);
     }
