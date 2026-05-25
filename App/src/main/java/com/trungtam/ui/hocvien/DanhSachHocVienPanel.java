@@ -1,5 +1,6 @@
 package com.trungtam.ui.hocvien;
 
+import com.trungtam.controller.HocVienController;
 import com.trungtam.model.HocVien;
 
 import javax.swing.*;
@@ -8,7 +9,6 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -16,6 +16,8 @@ import java.util.List;
  * Danh sách học viên – chỉ xem, có tìm kiếm và lọc theo giới tính / trạng thái.
  */
 public class DanhSachHocVienPanel extends JPanel {
+
+    private final HocVienController hocVienController = new HocVienController();
 
     private static final String[] COT = {
         "Mã HV", "Họ Tên", "Email", "SĐT", "Ngày Sinh", "Giới Tính", "Địa Chỉ"
@@ -63,7 +65,7 @@ public class DanhSachHocVienPanel extends JPanel {
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER);
 
         add(buildNoteBar(), BorderLayout.SOUTH);
-        loadSampleData();
+        loadData();
     }
 
     private JPanel buildTopBar() {
@@ -119,31 +121,9 @@ public class DanhSachHocVienPanel extends JPanel {
         }
     }
 
-    private HocVien buildSample(int maHV, int maTK, String hoTen, String email, String sdt,
-                                 String gioiTinh, String diaChi, LocalDate ngaySinh) {
-        HocVien hv = new HocVien();
-        hv.setMaHocVien(maHV);
-        hv.setMaTaiKhoan(maTK);
-        hv.setHoTen(hoTen);
-        hv.setEmail(email);
-        hv.setSoDienThoai(sdt);
-        hv.setGioiTinh(gioiTinh);
-        hv.setDiaChi(diaChi);
-        hv.setNgaySinh(ngaySinh);
-        return hv;
-    }
-
-    private void loadSampleData() {
-        hocVienList.add(buildSample(1, 4, "Nguyễn Văn An", "an.nguyen@student.edu.vn",
-                "0301112222", "Nam", "123 Đường Ba Tháng Hai, Quận 10, TP.HCM", LocalDate.of(2002, 1, 15)));
-        hocVienList.add(buildSample(2, 5, "Trần Thị Bình", "binh.tran@student.edu.vn",
-                "0302223333", "Nu", "456 Đường Nguyễn Trãi, Quận 5, TP.HCM", LocalDate.of(2003, 5, 22)));
-        hocVienList.add(buildSample(3, 6, "Phan Văn Cường", "cuong.phan@student.edu.vn",
-                "0303334444", "Nam", "789 Đường Lê Lợi, Quận 1, TP.HCM", LocalDate.of(2001, 9, 10)));
-        hocVienList.add(buildSample(4, 9, "Lê Thị Dung", "dung.le@student.edu.vn",
-                "0304445555", "Nu", "101 Đường Cách Mạng Tháng Tám, Quận 3, TP.HCM", LocalDate.of(2004, 12, 1)));
-        hocVienList.add(buildSample(5, 10, "Hoàng Văn Em", "em.hoang@student.edu.vn",
-                "0305556666", "Nam", "202 Đường Cộng Hòa, Quận Tân Bình, TP.HCM", LocalDate.of(2002, 7, 18)));
+    private void loadData() {
+        hocVienList.clear();
+        hocVienList.addAll(hocVienController.layDanhSach());
         refreshTable();
     }
 

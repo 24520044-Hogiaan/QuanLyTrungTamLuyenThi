@@ -1,5 +1,6 @@
 package com.trungtam.ui.giaovien;
 
+import com.trungtam.controller.GiaoVienController;
 import com.trungtam.model.GiaoVien;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
@@ -19,6 +20,7 @@ import java.util.List;
  */
 public class GiaoVienPanel extends JPanel {
 
+    private final GiaoVienController giaoVienController = new GiaoVienController();
     private final DefaultTableModel tableModel;
     private final JTable table;
     private final TableRowSorter<DefaultTableModel> rowSorter;
@@ -59,7 +61,7 @@ public class GiaoVienPanel extends JPanel {
                 SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.CENTER,
                 SwingConstants.CENTER);
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
-        loadSampleData();
+        loadData();
     }
 
     private JPanel buildTopBar() {
@@ -105,31 +107,9 @@ public class GiaoVienPanel extends JPanel {
         }
     }
 
-    private GiaoVien buildSample(int maGV, int maNV, String hoTen, String email,
-                                  String sdt, String boMon, String bangCap, String trangThai) {
-        GiaoVien gv = new GiaoVien();
-        gv.setMaGiaoVien(maGV);
-        gv.setMaNhanVien(maNV);
-        gv.setHoTen(hoTen);
-        gv.setEmail(email);
-        gv.setSoDienThoai(sdt);
-        gv.setMaBoMon(boMon);
-        gv.setBangCap(bangCap);
-        gv.setTrangThai(trangThai);
-        return gv;
-    }
-
-    private void loadSampleData() {
-        giaoVienList.add(buildSample(1, 2, "Trần Thị Mai", "mai.tran@center.edu.vn",
-                "0987654321", "Công nghệ phần mềm", "Thạc sĩ", "Dang day"));
-        giaoVienList.add(buildSample(2, 3, "Phạm Minh Đức", "duc.pham@center.edu.vn",
-                "0905123456", "Hệ thống thông tin", "Tiến sĩ", "Dang day"));
-        giaoVienList.add(buildSample(3, 6, "Võ Thị Hồng Giang", "giang.vo@center.edu.vn",
-                "0956444555", "Khoa học máy tính", "Thạc sĩ", "Nghi phep"));
-        giaoVienList.add(buildSample(4, 7, "Lâm Khánh Khoa", "khoa.lam@center.edu.vn",
-                "0967555666", "Mạng máy tính và truyền thông", "Đại học", "Dang day"));
-        giaoVienList.add(buildSample(5, 8, "Đỗ Quốc Minh", "minh.do@center.edu.vn",
-                "0978666777", "Khoa học dữ liệu", "Tiến sĩ", "Da nghi"));
+    private void loadData() {
+        giaoVienList.clear();
+        giaoVienList.addAll(giaoVienController.layDanhSach());
         refreshTable();
     }
 

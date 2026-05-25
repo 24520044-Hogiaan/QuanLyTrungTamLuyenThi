@@ -1,6 +1,5 @@
 package com.trungtam;
 
-import com.formdev.flatlaf.FlatLightLaf;
 import com.trungtam.ui.MainWindow;
 import com.trungtam.ui.UiTheme;
 import com.trungtam.ui.hocvien.HocVienWindow;
@@ -128,7 +127,17 @@ public class AppLauncher extends JFrame {
 
     public static void main(String[] args) {
         try {
-            FlatLightLaf.setup();
+            Class<?> lafClass = Class.forName("com.formdev.flatlaf.FlatLightLaf");
+            lafClass.getMethod("setup").invoke(null);
+        } catch (Exception ignored) {
+            try {
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
+
+        try {
             UiTheme.applyGlobalTokens();
         } catch (Exception e) {
             e.printStackTrace();

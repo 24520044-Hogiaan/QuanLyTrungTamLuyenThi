@@ -45,7 +45,7 @@ public class TraCuuKhoaHocPanel extends JPanel {
         setBorder(new EmptyBorder(UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L));
         setBackground(UiTheme.APP_BG);
 
-        JLabel title = new JLabel("TRA CỨU KHÓA HỌC / LỚP HỌC");
+        JLabel title = new JLabel("TRA CỨU & ĐĂNG KÝ LỚP HỌC");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.SECONDARY);
         add(title, BorderLayout.NORTH);

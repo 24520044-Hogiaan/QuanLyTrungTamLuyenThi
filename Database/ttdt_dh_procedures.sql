@@ -98,7 +98,6 @@ END;
 --   5. Cap nhat trang thai yeu cau -> 'Chap thuan'/'Tu choi'
 -- Luu y: Khong cap nhat MALOP tren hoa don cu de tranh xung dot
 --   voi TRG_INVOICE_LOCK (hoa don 'Da thanh toan' bi khoa)
-------------------------------------------------------------
 CREATE OR REPLACE PROCEDURE SP_EXECUTE_CLASS_TRANSFER (
     p_request_id IN NUMBER,
     p_staff_id   IN NUMBER,
@@ -128,6 +127,8 @@ BEGIN
     SELECT COUNT(*) INTO v_current_new_enroll
     FROM DANGKY WHERE MALOPHOC = v_new_class AND TRANGTHAIDKY = 'Dang hoc';
 
+    --DBMS_LOCK.SLEEP(10); -- Gia su co xu ly cham de kiem tra tinh dong thoi cua cac yeu cau
+
     IF v_current_new_enroll >= v_new_max_siso THEN
         -- Tu choi do het cho
         UPDATE YEUCAUCHUYENLOP
@@ -147,13 +148,8 @@ BEGIN
     WHERE MAHOCVIEN = v_student_id AND MALOPHOC = v_old_class AND TRANGTHAIDKY = 'Dang hoc';
 
     -- 4. Thuc hien chuyen giao trang thai dang ky
-    -- 4a. Danh dau dang ky lop cu la 'Chuyen lop'
-    UPDATE DANGKY
-    SET TRANGTHAIDKY = 'Chuyen lop'
-    WHERE MAHOCVIEN = v_student_id AND MALOPHOC = v_old_class;
-
     -- 4b. Tao dang ky moi tai lop moi voi trang thai 'Dang hoc'
-    INSERT INTO DANGKY (
+        INSERT INTO DANGKY (
         MAHOCVIEN, MALOPHOC, NGAYDANGKY, TRANGTHAIDKY, MAHOADON, HINHTHUCTT
     ) VALUES (
         v_student_id, v_new_class, SYSDATE, 'Dang hoc', v_invoice_id, v_payment_plan
@@ -166,6 +162,11 @@ BEGIN
         NGAYXULY   = SYSDATE,
         GHICHU     = p_note
     WHERE MAYEUCAU = p_request_id;
+
+        -- 4a. Danh dau dang ky lop cu la 'Chuyen lop'
+    UPDATE DANGKY
+    SET TRANGTHAIDKY = 'Chuyen lop'
+    WHERE MAHOCVIEN = v_student_id AND MALOPHOC = v_old_class;
 
     DBMS_OUTPUT.PUT_LINE('Thanh cong: Hoc vien ID ' || v_student_id ||
                          ' da chuyen tu lop ' || v_old_class || ' sang lop ' || v_new_class);
@@ -422,3 +423,4 @@ WHERE OBJECT_TYPE = 'PROCEDURE'
     'SP_PROCESS_REFUND'
 )
 ORDER BY OBJECT_NAME;
+

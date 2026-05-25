@@ -26,8 +26,8 @@ public class HocVienWindow extends JFrame {
         sidebar.addSection("Cổng Học Viên");
         String[] titles = {
                 "Hồ Sơ Cá Nhân",
-                "Tra Cứu Khóa Học",
-                "Đăng Ký Lớp",
+                "Tra Cứu & Đăng Ký Lớp",
+                "Chuyển / Hủy Lớp",
                 "Thời Khóa Biểu",
                 "Xem Điểm",
                 "Bảng Xếp Hạng",
@@ -42,7 +42,7 @@ public class HocVienWindow extends JFrame {
         JPanel[] panels = {
                 new HoSoCaNhanPanel(),
                 new TraCuuKhoaHocPanel(),
-                new DangKyChuyenHuyPanel(),
+                new ChuyenHuyLopPanel(),
                 new ThoiKhoaBieuHVPanel(),
                 new XemDiemHVPanel(),
                 new BangXepHangPanel(),
