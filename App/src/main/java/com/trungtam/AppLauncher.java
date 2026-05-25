@@ -145,12 +145,13 @@ public class AppLauncher extends JFrame {
             e.printStackTrace();
         }
         SwingUtilities.invokeLater(() -> {
-            RoleSelectionWindow roleSelectionWindow = new RoleSelectionWindow(roleId -> {
-                roleSelectionWindow.dispose();
+            final RoleSelectionWindow[] roleSelectionWindowRef = new RoleSelectionWindow[1];
+            roleSelectionWindowRef[0] = new RoleSelectionWindow(roleId -> {
+                roleSelectionWindowRef[0].dispose();
                 LoginWindow loginWindow = new LoginWindow(roleId);
                 loginWindow.setVisible(true);
             });
-            roleSelectionWindow.setVisible(true);
+            roleSelectionWindowRef[0].setVisible(true);
         });
     }
 }
