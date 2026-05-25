@@ -10,13 +10,12 @@ import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Panel xem danh sách giáo viên (chỉ đọc).
- * Hỗ trợ tìm kiếm nhanh theo tên hoặc chuyên môn.
+ * Hỗ trợ tìm kiếm nhanh theo tên hoặc bộ môn.
  */
 public class GiaoVienPanel extends JPanel {
 
@@ -26,7 +25,7 @@ public class GiaoVienPanel extends JPanel {
     private final List<GiaoVien> giaoVienList = new ArrayList<>();
 
     private static final String[] COT = {
-            "Mã GV", "Họ Tên", "Email", "SĐT", "Chuyên Môn", "Bằng Cấp", "Trạng Thái"
+            "Mã GV", "Họ Tên", "Email", "SĐT", "Bộ Môn", "Bằng Cấp", "Trạng Thái"
     };
 
     public GiaoVienPanel() {
@@ -50,13 +49,11 @@ public class GiaoVienPanel extends JPanel {
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
 
-        // Column widths
         int[] widths = { 60, 180, 200, 110, 130, 90, 100 };
         for (int i = 0; i < widths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        // Mã GV: center; Họ Tên/Email/SĐT/Chuyên Môn/Bằng Cấp: left; Trạng Thái: center
         UiComponents.setColumnAlignments(table,
                 SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.LEFT,
                 SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.CENTER,
@@ -74,7 +71,7 @@ public class GiaoVienPanel extends JPanel {
         title.setForeground(UiTheme.TEXT_PRIMARY);
 
         JTextField searchField = new JTextField(22);
-        searchField.putClientProperty("JTextField.placeholderText", "Tìm theo tên, chuyên môn...");
+        searchField.putClientProperty("JTextField.placeholderText", "Tìm theo tên, bộ môn...");
         searchField.setFont(UiTheme.BODY);
         searchField.addKeyListener(new KeyAdapter() {
             @Override
@@ -103,20 +100,36 @@ public class GiaoVienPanel extends JPanel {
         for (GiaoVien gv : giaoVienList) {
             tableModel.addRow(new Object[] {
                     gv.getMaGiaoVien(), gv.getHoTen(), gv.getEmail(),
-                    gv.getSoDienThoai(), gv.getChuyenMon(), gv.getBangCap(), gv.getTrangThai()
+                    gv.getSoDienThoai(), gv.getMaBoMon(), gv.getBangCap(), gv.getTrangThai()
             });
         }
     }
 
+    private GiaoVien buildSample(int maGV, int maNV, String hoTen, String email,
+                                  String sdt, String boMon, String bangCap, String trangThai) {
+        GiaoVien gv = new GiaoVien();
+        gv.setMaGiaoVien(maGV);
+        gv.setMaNhanVien(maNV);
+        gv.setHoTen(hoTen);
+        gv.setEmail(email);
+        gv.setSoDienThoai(sdt);
+        gv.setMaBoMon(boMon);
+        gv.setBangCap(bangCap);
+        gv.setTrangThai(trangThai);
+        return gv;
+    }
+
     private void loadSampleData() {
-        giaoVienList.add(new GiaoVien(1, "Nguyễn Văn An", "an.nv@trungtam.edu.vn", "0901234567", "Toán học", "Thạc sĩ",
-                "Đang làm", LocalDate.of(1985, 3, 15)));
-        giaoVienList.add(new GiaoVien(2, "Trần Thị Bình", "binh.tt@trungtam.edu.vn", "0912345678", "Vật lý", "Tiến sĩ",
-                "Đang làm", LocalDate.of(1979, 7, 22)));
-        giaoVienList.add(new GiaoVien(3, "Lê Hoàng Cường", "cuong.lh@trungtam.edu.vn", "0923456789", "Hóa học",
-                "Cử nhân", "Đang làm", LocalDate.of(1990, 11, 5)));
-        giaoVienList.add(new GiaoVien(4, "Phạm Thị Dung", "dung.pt@trungtam.edu.vn", "0934567890", "Tiếng Anh",
-                "Thạc sĩ", "Nghỉ việc", LocalDate.of(1988, 6, 18)));
+        giaoVienList.add(buildSample(1, 2, "Trần Thị Mai", "mai.tran@center.edu.vn",
+                "0987654321", "Công nghệ phần mềm", "Thạc sĩ", "Dang day"));
+        giaoVienList.add(buildSample(2, 3, "Phạm Minh Đức", "duc.pham@center.edu.vn",
+                "0905123456", "Hệ thống thông tin", "Tiến sĩ", "Dang day"));
+        giaoVienList.add(buildSample(3, 6, "Võ Thị Hồng Giang", "giang.vo@center.edu.vn",
+                "0956444555", "Khoa học máy tính", "Thạc sĩ", "Nghi phep"));
+        giaoVienList.add(buildSample(4, 7, "Lâm Khánh Khoa", "khoa.lam@center.edu.vn",
+                "0967555666", "Mạng máy tính và truyền thông", "Đại học", "Dang day"));
+        giaoVienList.add(buildSample(5, 8, "Đỗ Quốc Minh", "minh.do@center.edu.vn",
+                "0978666777", "Khoa học dữ liệu", "Tiến sĩ", "Da nghi"));
         refreshTable();
     }
 
@@ -127,7 +140,7 @@ public class GiaoVienPanel extends JPanel {
                 JTable t, Object val, boolean sel, boolean foc, int r, int c) {
             super.getTableCellRendererComponent(t, val, sel, foc, r, c);
             if (!sel && c == 6) {
-                boolean active = "Đang làm".equals(String.valueOf(val));
+                boolean active = "Dang day".equals(String.valueOf(val));
                 setForeground(active ? UiTheme.SUCCESS : UiTheme.DANGER);
                 setFont(UiTheme.BODY_B);
             } else if (!sel) {

@@ -1,6 +1,5 @@
 package com.trungtam.ui.hocvien;
 
-import com.formdev.flatlaf.FlatLightLaf;
 import com.trungtam.ui.SidebarPanel;
 import com.trungtam.ui.UiTheme;
 
@@ -71,15 +70,5 @@ public class HocVienWindow extends JFrame {
         root.add(sidebarScroll, BorderLayout.WEST);
         root.add(contentArea, BorderLayout.CENTER);
         setContentPane(root);
-    }
-
-    public static void main(String[] args) {
-        try {
-            FlatLightLaf.setup();
-            UiTheme.applyGlobalTokens();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        SwingUtilities.invokeLater(() -> new HocVienWindow().setVisible(true));
     }
 }

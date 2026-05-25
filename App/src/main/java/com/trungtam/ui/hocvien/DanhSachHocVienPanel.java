@@ -13,22 +13,20 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Danh sách học viên – chỉ xem, có tìm kiếm và lọc theo khối thi / trạng thái.
+ * Danh sách học viên – chỉ xem, có tìm kiếm và lọc theo giới tính / trạng thái.
  */
 public class DanhSachHocVienPanel extends JPanel {
 
     private static final String[] COT = {
-        "Mã HV", "Họ Tên", "Email", "SĐT", "Ngày Sinh", "Khối Thi", "Trạng Thái", "Ngày ĐK"
+        "Mã HV", "Họ Tên", "Email", "SĐT", "Ngày Sinh", "Giới Tính", "Địa Chỉ"
     };
-    private static final String[] KHOI_LIST = {"Tất cả", "Khối A", "Khối B", "Khối D"};
-    private static final String[] STATUS_LIST = {"Tất cả", "Đang học", "Bảo lưu", "Đã tốt nghiệp"};
+    private static final String[] GENDER_LIST = {"Tất cả", "Nam", "Nu"};
 
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
     private final List<HocVien> hocVienList = new ArrayList<>();
     private final JTextField txtSearch = new JTextField(20);
-    private final JComboBox<String> cboKhoi   = new JComboBox<>(KHOI_LIST);
-    private final JComboBox<String> cboStatus = new JComboBox<>(STATUS_LIST);
+    private final JComboBox<String> cboGender = new JComboBox<>(GENDER_LIST);
 
     public DanhSachHocVienPanel() {
         setLayout(new BorderLayout(0, 10));
@@ -49,15 +47,14 @@ public class DanhSachHocVienPanel extends JPanel {
         table.setFillsViewportHeight(true);
         table.setAutoResizeMode(JTable.AUTO_RESIZE_LAST_COLUMN);
 
-        // Cột cố định độ rộng
-        int[] widths = {60, 170, 210, 110, 100, 80, 100};
+        int[] widths = {60, 170, 210, 110, 100, 80};
         for (int i = 0; i < widths.length; i++) {
             TableColumn col = table.getColumnModel().getColumn(i);
             col.setPreferredWidth(widths[i]);
             if (i < widths.length - 1) { col.setMaxWidth(widths[i]); col.setResizable(false); }
         }
 
-        table.setDefaultRenderer(Object.class, new StatusAwareRenderer());
+        table.setDefaultRenderer(Object.class, new AltRowRenderer());
 
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
@@ -81,13 +78,10 @@ public class DanhSachHocVienPanel extends JPanel {
         txtSearch.addKeyListener(new KeyAdapter() {
             @Override public void keyReleased(KeyEvent e) { applyFilter(); }
         });
-        cboKhoi.addActionListener(e -> applyFilter());
-        cboStatus.addActionListener(e -> applyFilter());
+        cboGender.addActionListener(e -> applyFilter());
 
-        filterBar.add(new JLabel("Khối:"));
-        filterBar.add(cboKhoi);
-        filterBar.add(new JLabel("Trạng thái:"));
-        filterBar.add(cboStatus);
+        filterBar.add(new JLabel("Giới tính:"));
+        filterBar.add(cboGender);
         filterBar.add(txtSearch);
 
         top.add(title, BorderLayout.WEST);
@@ -104,17 +98,14 @@ public class DanhSachHocVienPanel extends JPanel {
 
     private void applyFilter() {
         String keyword = txtSearch.getText().trim();
-        String khoi    = (String) cboKhoi.getSelectedItem();
-        String status  = (String) cboStatus.getSelectedItem();
+        String gender  = (String) cboGender.getSelectedItem();
 
-        RowFilter<DefaultTableModel, Object> kw  = keyword.isEmpty() ? null : RowFilter.regexFilter("(?i)" + keyword);
-        RowFilter<DefaultTableModel, Object> kf  = "Tất cả".equals(khoi)   ? null : RowFilter.regexFilter("(?i)" + khoi, 5);
-        RowFilter<DefaultTableModel, Object> sf  = "Tất cả".equals(status) ? null : RowFilter.regexFilter("(?i)" + status, 6);
+        RowFilter<DefaultTableModel, Object> kw = keyword.isEmpty() ? null : RowFilter.regexFilter("(?i)" + keyword);
+        RowFilter<DefaultTableModel, Object> gf = "Tất cả".equals(gender) ? null : RowFilter.regexFilter("(?i)" + gender, 5);
 
         List<RowFilter<DefaultTableModel, Object>> filters = new ArrayList<>();
         if (kw != null) filters.add(kw);
-        if (kf != null) filters.add(kf);
-        if (sf != null) filters.add(sf);
+        if (gf != null) filters.add(gf);
         rowSorter.setRowFilter(filters.isEmpty() ? null : RowFilter.andFilter(filters));
     }
 
@@ -123,40 +114,46 @@ public class DanhSachHocVienPanel extends JPanel {
         for (HocVien hv : hocVienList) {
             tableModel.addRow(new Object[]{
                 hv.getMaHocVien(), hv.getHoTen(), hv.getEmail(), hv.getSoDienThoai(),
-                hv.getNgaySinh(), hv.getKhoiThi(), hv.getTrangThai(), hv.getNgayDangKy()
+                hv.getNgaySinh(), hv.getGioiTinh(), hv.getDiaChi()
             });
         }
     }
 
+    private HocVien buildSample(int maHV, int maTK, String hoTen, String email, String sdt,
+                                 String gioiTinh, String diaChi, LocalDate ngaySinh) {
+        HocVien hv = new HocVien();
+        hv.setMaHocVien(maHV);
+        hv.setMaTaiKhoan(maTK);
+        hv.setHoTen(hoTen);
+        hv.setEmail(email);
+        hv.setSoDienThoai(sdt);
+        hv.setGioiTinh(gioiTinh);
+        hv.setDiaChi(diaChi);
+        hv.setNgaySinh(ngaySinh);
+        return hv;
+    }
+
     private void loadSampleData() {
-        hocVienList.add(new HocVien(1,  "Nguyễn Minh Anh",  "anh.nm@mail.com",    "0901111111", "Khối A", "Đang học",       LocalDate.of(2007, 3, 10), LocalDate.of(2025, 9, 1)));
-        hocVienList.add(new HocVien(2,  "Trần Bảo Châu",    "chau.tb@mail.com",   "0902222222", "Khối D", "Đang học",       LocalDate.of(2007, 6, 22), LocalDate.of(2025, 9, 1)));
-        hocVienList.add(new HocVien(3,  "Lê Văn Dũng",      "dung.lv@mail.com",   "0903333333", "Khối A", "Bảo lưu",        LocalDate.of(2006, 11, 5), LocalDate.of(2024, 9, 1)));
-        hocVienList.add(new HocVien(4,  "Phạm Thị Hoa",     "hoa.pt@mail.com",    "0904444444", "Khối B", "Đang học",       LocalDate.of(2007, 1, 18), LocalDate.of(2025, 9, 1)));
-        hocVienList.add(new HocVien(5,  "Đỗ Quốc Hùng",     "hung.dq@mail.com",   "0905555555", "Khối A", "Đã tốt nghiệp", LocalDate.of(2005, 8, 30), LocalDate.of(2023, 9, 1)));
-        hocVienList.add(new HocVien(6,  "Võ Thị Lan",       "lan.vt@mail.com",    "0906666666", "Khối D", "Đang học",       LocalDate.of(2007, 4, 15), LocalDate.of(2025, 9, 1)));
-        hocVienList.add(new HocVien(7,  "Bùi Đức Mạnh",     "manh.bd@mail.com",   "0907777777", "Khối B", "Đang học",       LocalDate.of(2007, 9, 20), LocalDate.of(2025, 9, 1)));
-        hocVienList.add(new HocVien(8,  "Đinh Thị Nga",     "nga.dt@mail.com",    "0908888888", "Khối D", "Bảo lưu",        LocalDate.of(2006, 12, 3), LocalDate.of(2024, 9, 1)));
-        hocVienList.add(new HocVien(9,  "Hoàng Văn Phúc",   "phuc.hv@mail.com",   "0909999999", "Khối A", "Đang học",       LocalDate.of(2007, 2, 7),  LocalDate.of(2025, 9, 1)));
-        hocVienList.add(new HocVien(10, "Ngô Thị Quỳnh",    "quynh.nt@mail.com",  "0910111222", "Khối B", "Đang học",       LocalDate.of(2007, 7, 14), LocalDate.of(2025, 9, 1)));
+        hocVienList.add(buildSample(1, 4, "Nguyễn Văn An", "an.nguyen@student.edu.vn",
+                "0301112222", "Nam", "123 Đường Ba Tháng Hai, Quận 10, TP.HCM", LocalDate.of(2002, 1, 15)));
+        hocVienList.add(buildSample(2, 5, "Trần Thị Bình", "binh.tran@student.edu.vn",
+                "0302223333", "Nu", "456 Đường Nguyễn Trãi, Quận 5, TP.HCM", LocalDate.of(2003, 5, 22)));
+        hocVienList.add(buildSample(3, 6, "Phan Văn Cường", "cuong.phan@student.edu.vn",
+                "0303334444", "Nam", "789 Đường Lê Lợi, Quận 1, TP.HCM", LocalDate.of(2001, 9, 10)));
+        hocVienList.add(buildSample(4, 9, "Lê Thị Dung", "dung.le@student.edu.vn",
+                "0304445555", "Nu", "101 Đường Cách Mạng Tháng Tám, Quận 3, TP.HCM", LocalDate.of(2004, 12, 1)));
+        hocVienList.add(buildSample(5, 10, "Hoàng Văn Em", "em.hoang@student.edu.vn",
+                "0305556666", "Nam", "202 Đường Cộng Hòa, Quận Tân Bình, TP.HCM", LocalDate.of(2002, 7, 18)));
         refreshTable();
     }
 
-    // Màu xen kẽ dòng + màu cột Trạng Thái
-    private static class StatusAwareRenderer extends DefaultTableCellRenderer {
+    private static class AltRowRenderer extends DefaultTableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable t, Object val, boolean sel, boolean foc, int r, int c) {
             super.getTableCellRendererComponent(t, val, sel, foc, r, c);
             if (!sel) {
                 setBackground(r % 2 == 0 ? Color.WHITE : new Color(0xF0F4FF));
-                if (c == 6) {
-                    String s = String.valueOf(val);
-                    setForeground("Đang học".equals(s) ? new Color(0x2E7D32)
-                                : "Bảo lưu".equals(s)  ? new Color(0xE65100)
-                                :                         new Color(0x616161));
-                } else {
-                    setForeground(new Color(0x212121));
-                }
+                setForeground(new Color(0x212121));
             }
             return this;
         }

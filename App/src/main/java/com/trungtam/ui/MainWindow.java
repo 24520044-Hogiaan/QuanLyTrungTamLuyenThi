@@ -1,6 +1,5 @@
 package com.trungtam.ui;
 
-import com.formdev.flatlaf.FlatLightLaf;
 import com.trungtam.ui.giaovien.*;
 
 import javax.swing.*;
@@ -10,7 +9,7 @@ public class MainWindow extends JFrame {
 
     public MainWindow() {
         setTitle("Quản Lý Giáo Viên – Trung Tâm Đào Tạo");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(1300, 820);
         setMinimumSize(new Dimension(1024, 640));
         setLocationRelativeTo(null);
@@ -54,15 +53,5 @@ public class MainWindow extends JFrame {
         root.add(sidebarScroll, BorderLayout.WEST);
         root.add(contentArea, BorderLayout.CENTER);
         setContentPane(root);
-    }
-
-    public static void main(String[] args) {
-        try {
-            FlatLightLaf.setup();
-            UiTheme.applyGlobalTokens();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        SwingUtilities.invokeLater(() -> new MainWindow().setVisible(true));
     }
 }

@@ -7,9 +7,6 @@ import com.trungtam.ui.UiTheme;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 
 /**
  * Dialog thêm / sửa thông tin giáo viên.
@@ -20,23 +17,21 @@ public class GiaoVienDialog extends JDialog {
     private final JTextField txtHoTen = new JTextField(24);
     private final JTextField txtEmail = new JTextField(24);
     private final JTextField txtSdt = new JTextField(24);
-    private final JTextField txtChuyenMon = new JTextField(24);
-    private final JTextField txtNgaySinh = new JTextField(24);
+    private final JTextField txtBoMon = new JTextField(24);
     private final JComboBox<String> cboBangCap = new JComboBox<>(
-            new String[] { "Cử nhân", "Thạc sĩ", "Tiến sĩ" });
+            new String[] { "Đại học", "Thạc sĩ", "Tiến sĩ" });
     private final JComboBox<String> cboTrangThai = new JComboBox<>(
-            new String[] { "Đang làm", "Nghỉ việc" });
+            new String[] { "Dang day", "Nghi phep", "Da nghi" });
 
     private GiaoVien result = null;
     private final GiaoVien editingTarget;
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     public GiaoVienDialog(Frame parent, GiaoVien existing) {
         super(parent, existing == null ? "Thêm Giáo Viên" : "Sửa Giáo Viên", true);
         this.editingTarget = existing;
 
-        setSize(480, 420);
-        setMinimumSize(new Dimension(420, 380));
+        setSize(480, 380);
+        setMinimumSize(new Dimension(420, 340));
         setLocationRelativeTo(parent);
         setResizable(true);
 
@@ -60,14 +55,11 @@ public class GiaoVienDialog extends JDialog {
         gbc.insets = new Insets(6, 4, 6, 4);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        txtNgaySinh.putClientProperty("JTextField.placeholderText", "dd/MM/yyyy");
-
         Object[][] rows = {
                 { "Họ và tên *", txtHoTen },
                 { "Email *", txtEmail },
                 { "Số điện thoại", txtSdt },
-                { "Ngày sinh", txtNgaySinh },
-                { "Chuyên môn", txtChuyenMon },
+                { "Bộ môn", txtBoMon },
                 { "Bằng cấp", cboBangCap },
                 { "Trạng thái", cboTrangThai },
         };
@@ -109,9 +101,7 @@ public class GiaoVienDialog extends JDialog {
         txtHoTen.setText(gv.getHoTen());
         txtEmail.setText(gv.getEmail());
         txtSdt.setText(gv.getSoDienThoai());
-        txtChuyenMon.setText(gv.getChuyenMon());
-        if (gv.getNgaySinh() != null)
-            txtNgaySinh.setText(gv.getNgaySinh().format(DATE_FORMAT));
+        txtBoMon.setText(gv.getMaBoMon());
         cboBangCap.setSelectedItem(gv.getBangCap());
         cboTrangThai.setSelectedItem(gv.getTrangThai());
     }
@@ -126,24 +116,15 @@ public class GiaoVienDialog extends JDialog {
             return;
         }
 
-        LocalDate ngaySinh = null;
-        String ngaySinhText = txtNgaySinh.getText().trim();
-        if (!ngaySinhText.isEmpty()) {
-            try {
-                ngaySinh = LocalDate.parse(ngaySinhText, DATE_FORMAT);
-            } catch (DateTimeParseException ex) {
-                JOptionPane.showMessageDialog(this,
-                        "Ngày sinh không đúng định dạng dd/MM/yyyy.", "Lỗi", JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-        }
-
-        int maGV = (editingTarget != null) ? editingTarget.getMaGiaoVien() : 0;
-        result = new GiaoVien(maGV, hoTen, email,
-                txtSdt.getText().trim(), txtChuyenMon.getText().trim(),
-                (String) cboBangCap.getSelectedItem(),
-                (String) cboTrangThai.getSelectedItem(),
-                ngaySinh);
+        result = new GiaoVien();
+        result.setMaGiaoVien(editingTarget != null ? editingTarget.getMaGiaoVien() : 0);
+        result.setMaNhanVien(editingTarget != null ? editingTarget.getMaNhanVien() : 0);
+        result.setHoTen(hoTen);
+        result.setEmail(email);
+        result.setSoDienThoai(txtSdt.getText().trim());
+        result.setMaBoMon(txtBoMon.getText().trim());
+        result.setBangCap((String) cboBangCap.getSelectedItem());
+        result.setTrangThai((String) cboTrangThai.getSelectedItem());
         dispose();
     }
 
