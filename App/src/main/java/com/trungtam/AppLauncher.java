@@ -2,6 +2,8 @@ package com.trungtam;
 
 import com.trungtam.ui.MainWindow;
 import com.trungtam.ui.UiTheme;
+import com.trungtam.ui.auth.LoginWindow;
+import com.trungtam.ui.auth.RoleSelectionWindow;
 import com.trungtam.ui.hocvien.HocVienWindow;
 
 import javax.swing.*;
@@ -142,6 +144,13 @@ public class AppLauncher extends JFrame {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        SwingUtilities.invokeLater(() -> new AppLauncher().setVisible(true));
+        SwingUtilities.invokeLater(() -> {
+            RoleSelectionWindow roleSelectionWindow = new RoleSelectionWindow(roleId -> {
+                roleSelectionWindow.dispose();
+                LoginWindow loginWindow = new LoginWindow(roleId);
+                loginWindow.setVisible(true);
+            });
+            roleSelectionWindow.setVisible(true);
+        });
     }
 }
