@@ -23,16 +23,20 @@ public class QuanLyWindow extends JFrame {
         root.add(buildTopbar(), BorderLayout.NORTH);
 
         SidebarPanel sidebar = new SidebarPanel(UiTheme.QUANLY);
-        sidebar.addSection("Quản lý đào tạo");
+        sidebar.addSection("Nhân viên quản lý");
         String[] titles = {
-                "Quản Lý Lớp Học", "Quản Lý Khóa Học", "Quản Lý Phòng Học",
-                "Duyệt Chuyển Lớp", "Duyệt Hoàn Trả", "Duyệt Học Bổng"
+                "Giáo Viên", "Bộ Môn", "Học Viên", "Khóa Học", "Lớp Học",
+                "Thống Kê", "Yêu Cầu Chuyển Lớp", "Yêu Cầu Hoàn Tiền",
+                "Phòng Học", "Ngày Nghỉ"
         };
         for (String t : titles) sidebar.addItem(t);
 
         JPanel[] panels = {
-                new QuanLyLopHocPanel(), new QuanLyKhoaHocPanel(), new QuanLyPhongHocPanel(),
-                new DuyetChuyenLopPanel(), new DuyetHoanTraPanel(), new DuyetHocBongPanel()
+                new QuanLyGiaoVienPanel(), new QuanLyBoMonPanel(),
+                new QuanLyHocVienPanel(), new QuanLyKhoaHocPanel(),
+                new QuanLyLopHocPanel(), new ThongKePanel(),
+                new DuyetChuyenLopPanel(), new DuyetHoanTraPanel(),
+                new QuanLyPhongHocPanel(), new NgayNghiPanel()
         };
 
         CardLayout cards = new CardLayout();
@@ -70,7 +74,7 @@ public class QuanLyWindow extends JFrame {
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
 
-        JLabel subtitle = new JLabel("Quản lý lớp, khóa học, phòng học và phê duyệt yêu cầu");
+        JLabel subtitle = new JLabel("Quản lý lớp, khóa học, giáo viên, học viên và phê duyệt yêu cầu");
         subtitle.setFont(UiTheme.CAPTION);
         subtitle.setForeground(UiTheme.TEXT_MUTED);
 

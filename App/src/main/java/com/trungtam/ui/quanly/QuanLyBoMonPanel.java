@@ -11,16 +11,14 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
-public class QuanLyKhoaHocPanel extends JPanel {
+public class QuanLyBoMonPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
 
-    private static final String[] COT = {
-            "Mã KH", "Tên Khóa Học", "Mô Tả", "Hình Thức Học Phí", "Học Phí", "Mã Bộ Môn", "Cấp Độ"
-    };
+    private static final String[] COT = { "Mã Bộ Môn", "Tên Bộ Môn" };
 
-    public QuanLyKhoaHocPanel() {
+    public QuanLyBoMonPanel() {
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
@@ -32,14 +30,10 @@ public class QuanLyKhoaHocPanel extends JPanel {
         };
         JTable table = new JTable(tableModel);
         UiComponents.styleTable(table);
-        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
 
-        int[] widths = {60, 200, 250, 120, 120, 80, 100};
-        for (int i = 0; i < widths.length; i++) {
-            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
-        }
+        UiComponents.setColumnAlignments(table, SwingConstants.CENTER, SwingConstants.LEFT);
 
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         add(buildBottomBar(), BorderLayout.SOUTH);
@@ -50,7 +44,7 @@ public class QuanLyKhoaHocPanel extends JPanel {
         JPanel panel = new JPanel(new BorderLayout(12, 0));
         panel.setOpaque(false);
 
-        JLabel title = new JLabel("Danh Sách Khóa Học");
+        JLabel title = new JLabel("Danh Sách Bộ Môn");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
 
@@ -75,15 +69,15 @@ public class QuanLyKhoaHocPanel extends JPanel {
         bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
         bar.add(UiComponents.primaryButton("Sửa", UiTheme.PRIMARY));
         bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
-        bar.add(UiComponents.ghostButton("Làm Mới"));
+        bar.add(UiComponents.ghostButton("Làm mới"));
         return bar;
     }
 
     private void loadSampleData() {
-        tableModel.addRow(new Object[]{1, "Ôn thi Toán THPT QG", "Luyện giải đề Toán cấp 3", "Đóng theo tháng", "500,000 VNĐ", 101, "Cơ bản"});
-        tableModel.addRow(new Object[]{2, "Ôn thi Ngữ Văn THPT QG", "Luyện viết văn và đọc hiểu", "Đóng theo tháng", "600,000 VNĐ", 102, "Cơ bản"});
-        tableModel.addRow(new Object[]{3, "Ôn thi Tiếng Anh THPT QG", "Luyện ngữ pháp và từ vựng", "Đóng theo tháng", "700,000 VNĐ", 103, "Nâng cao"});
-        tableModel.addRow(new Object[]{4, "Ôn thi Vật Lý THPT QG", "Luyện giải đề Vật lý chuyên sâu", "Đóng theo tháng", "800,000 VNĐ", 104, "Nâng cao"});
-        tableModel.addRow(new Object[]{5, "Ôn thi Hóa Học THPT QG 1", "Luyện giải đề Hóa học cấp 3", "Đóng theo tháng", "1,000,000 VNĐ", 105, "Nâng cao"});
+        tableModel.addRow(new Object[]{101, "Toán học"});
+        tableModel.addRow(new Object[]{102, "Ngữ văn"});
+        tableModel.addRow(new Object[]{103, "Tiếng Anh"});
+        tableModel.addRow(new Object[]{104, "Vật lý"});
+        tableModel.addRow(new Object[]{105, "Hóa học"});
     }
 }
