@@ -2,7 +2,6 @@ package com.trungtam;
 
 import com.trungtam.ui.UiTheme;
 import com.trungtam.ui.auth.LoginWindow;
-import com.trungtam.ui.auth.RoleSelectionWindow;
 
 import javax.swing.*;
 
@@ -25,14 +24,7 @@ public class AppLauncher {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        SwingUtilities.invokeLater(() -> {
-            final RoleSelectionWindow[] roleSelectionWindowRef = new RoleSelectionWindow[1];
-            roleSelectionWindowRef[0] = new RoleSelectionWindow(roleId -> {
-                roleSelectionWindowRef[0].dispose();
-                LoginWindow loginWindow = new LoginWindow(roleId);
-                loginWindow.setVisible(true);
-            });
-            roleSelectionWindowRef[0].setVisible(true);
-        });
+
+        SwingUtilities.invokeLater(() -> new LoginWindow().setVisible(true));
     }
 }

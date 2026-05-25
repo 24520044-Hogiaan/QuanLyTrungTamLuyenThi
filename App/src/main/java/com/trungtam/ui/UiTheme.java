@@ -32,6 +32,16 @@ public final class UiTheme {
     /** Sidebar foreground (unselected) */
     public static final Color SIDEBAR_FG = new Color(0xC5CAE9);
 
+    /** Admin brand colour — purple */
+    public static final Color ADMIN = new Color(0x6A1B9A);
+    public static final Color ADMIN_SEL = new Color(0x7B1FA2);
+    /** QuanLy brand colour — deep orange */
+    public static final Color QUANLY = new Color(0xE65100);
+    public static final Color QUANLY_SEL = new Color(0xEF6C00);
+    /** KeToan brand colour — teal */
+    public static final Color KETOAN = new Color(0x00695C);
+    public static final Color KETOAN_SEL = new Color(0x00796B);
+
     /** Secondary brand colour — green (Học Viên module) */
     public static final Color SECONDARY = new Color(0x1B5E20);
     public static final Color SECONDARY_SEL = new Color(0x2E7D32);

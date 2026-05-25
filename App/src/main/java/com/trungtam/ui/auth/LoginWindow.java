@@ -5,7 +5,10 @@ import com.trungtam.model.TaiKhoan;
 import com.trungtam.ui.MainWindow;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
+import com.trungtam.ui.admin.AdminWindow;
 import com.trungtam.ui.hocvien.HocVienWindow;
+import com.trungtam.ui.ketoan.KeToanWindow;
+import com.trungtam.ui.quanly.QuanLyWindow;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -14,17 +17,17 @@ import java.awt.*;
 public class LoginWindow extends JFrame {
     private final AuthController authController = new AuthController();
 
-    public LoginWindow(int roleId) {
-        setTitle("Đăng nhập");
+    public LoginWindow() {
+        setTitle("Đăng nhập – Trung Tâm Đào Tạo");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(480, 420);
-        setMinimumSize(new Dimension(400, 380));
+        setSize(480, 440);
+        setMinimumSize(new Dimension(400, 400));
         setLocationRelativeTo(null);
         setResizable(true);
-        setContentPane(buildContent(roleId));
+        setContentPane(buildContent());
     }
 
-    private JPanel buildContent(int roleId) {
+    private JPanel buildContent() {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(UiTheme.APP_BG);
 
@@ -32,7 +35,7 @@ public class LoginWindow extends JFrame {
             @Override
             public Dimension getPreferredSize() {
                 Dimension d = super.getPreferredSize();
-                return new Dimension(350, d.height);
+                return new Dimension(360, d.height);
             }
         };
         card.setBackground(UiTheme.CARD_BG);
@@ -46,11 +49,10 @@ public class LoginWindow extends JFrame {
         header.setOpaque(false);
 
         JLabel title = new JLabel("Đăng nhập");
-        title.setFont(UiTheme.TITLE_M);
+        title.setFont(UiTheme.TITLE_L);
         title.setForeground(UiTheme.TEXT_PRIMARY);
 
-        String roleName = roleId == RoleSelectionWindow.ROLE_GIAOVIEN ? "Giáo viên" : "Học viên";
-        JLabel subtitle = new JLabel("Vai trò: " + roleName);
+        JLabel subtitle = new JLabel("Trung Tâm Đào Tạo – Hệ thống quản lý");
         subtitle.setFont(UiTheme.CAPTION);
         subtitle.setForeground(UiTheme.TEXT_MUTED);
 
@@ -62,8 +64,7 @@ public class LoginWindow extends JFrame {
         // Form fields
         JTextField userField = new JTextField();
         JPasswordField passField = new JPasswordField();
-        Color btnColor = roleId == RoleSelectionWindow.ROLE_GIAOVIEN ? UiTheme.PRIMARY : UiTheme.SECONDARY;
-        JButton loginButton = UiComponents.primaryButton("Đăng nhập", btnColor);
+        JButton loginButton = UiComponents.primaryButton("Đăng nhập", UiTheme.PRIMARY);
 
         userField.setFont(UiTheme.BODY);
         passField.setFont(UiTheme.BODY);
@@ -72,18 +73,13 @@ public class LoginWindow extends JFrame {
         userField.putClientProperty("JTextField.placeholderText", "Nhập tên tài khoản");
         passField.putClientProperty("JTextField.placeholderText", "Nhập mật khẩu");
 
-        // Password toggle
         JCheckBox showPassToggle = new JCheckBox("Hiện mật khẩu");
         showPassToggle.setFont(UiTheme.CAPTION);
         showPassToggle.setForeground(UiTheme.TEXT_MUTED);
         showPassToggle.setOpaque(false);
         showPassToggle.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         showPassToggle.addActionListener(e -> {
-            if (showPassToggle.isSelected()) {
-                passField.setEchoChar((char) 0);
-            } else {
-                passField.setEchoChar('\u2022');
-            }
+            passField.setEchoChar(showPassToggle.isSelected() ? (char) 0 : '\u2022');
         });
 
         JPanel form = new JPanel(new GridBagLayout());
@@ -108,7 +104,6 @@ public class LoginWindow extends JFrame {
         g.insets = new Insets(0, 0, 4, 0);
         form.add(showPassToggle, g);
 
-        // Action bar
         JPanel actionBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 8));
         actionBar.setOpaque(false);
         actionBar.add(loginButton);
@@ -119,36 +114,10 @@ public class LoginWindow extends JFrame {
         center.add(actionBar, BorderLayout.SOUTH);
         card.add(center, BorderLayout.CENTER);
 
-        loginButton.addActionListener(e -> {
-            String username = userField.getText().trim();
-            String password = new String(passField.getPassword());
+        // Enter key triggers login
+        getRootPane().setDefaultButton(loginButton);
 
-            TaiKhoan tk;
-            try {
-                tk = authController.dangNhap(username, password, roleId);
-            } catch (RuntimeException ex) {
-                JOptionPane.showMessageDialog(this,
-                        ex.getMessage(),
-                        "Lỗi kết nối",
-                        JOptionPane.ERROR_MESSAGE);
-                return;
-            }
-
-            if (tk == null) {
-                JOptionPane.showMessageDialog(this,
-                        "Sai tên tài khoản, mật khẩu hoặc vai trò.",
-                        "Đăng nhập thất bại",
-                        JOptionPane.WARNING_MESSAGE);
-                return;
-            }
-
-            dispose();
-            if (roleId == RoleSelectionWindow.ROLE_GIAOVIEN) {
-                new MainWindow().setVisible(true);
-            } else {
-                new HocVienWindow().setVisible(true);
-            }
-        });
+        loginButton.addActionListener(e -> handleLogin(userField, passField));
 
         JPanel wrapper = new JPanel(new GridBagLayout());
         wrapper.setOpaque(false);
@@ -162,6 +131,55 @@ public class LoginWindow extends JFrame {
 
         root.add(wrapper, BorderLayout.CENTER);
         return root;
+    }
+
+    private void handleLogin(JTextField userField, JPasswordField passField) {
+        String username = userField.getText().trim();
+        String password = new String(passField.getPassword());
+
+        if (username.isEmpty() || password.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "Vui lòng nhập đầy đủ tên tài khoản và mật khẩu.",
+                    "Thiếu thông tin", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        TaiKhoan tk;
+        try {
+            tk = authController.dangNhap(username, password);
+        } catch (RuntimeException ex) {
+            JOptionPane.showMessageDialog(this, ex.getMessage(),
+                    "Lỗi kết nối", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        if (tk == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Sai tên tài khoản hoặc mật khẩu.",
+                    "Đăng nhập thất bại", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        dispose();
+        openWindowByRole(tk.getMaVaiTro());
+    }
+
+    private void openWindowByRole(int roleId) {
+        JFrame window = switch (roleId) {
+            case 1 -> new AdminWindow();
+            case 2 -> new MainWindow();
+            case 3 -> new HocVienWindow();
+            case 4 -> new KeToanWindow();
+            case 5 -> new QuanLyWindow();
+            default -> null;
+        };
+        if (window != null) {
+            window.setVisible(true);
+        } else {
+            JOptionPane.showMessageDialog(null,
+                    "Vai trò không được hỗ trợ (mã: " + roleId + ")",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private JLabel createFieldLabel(String text) {

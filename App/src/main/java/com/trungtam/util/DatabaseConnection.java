@@ -7,12 +7,13 @@ import java.sql.SQLException;
 public final class DatabaseConnection {
 
     private static final String URL = "jdbc:oracle:thin:@localhost:1521:xe";
-    private static final String USER = "C##TTDT";
-    private static final String PASSWORD = "123";
+    private static final String USER = "system";
+    private static final String PASSWORD = "12345678";
 
     private static Connection connection;
 
-    private DatabaseConnection() {}
+    private DatabaseConnection() {
+    }
 
     public static Connection getConnection() throws SQLException {
         if (connection == null || connection.isClosed()) {
@@ -25,7 +26,8 @@ public final class DatabaseConnection {
         if (connection != null) {
             try {
                 connection.close();
-            } catch (SQLException ignored) {}
+            } catch (SQLException ignored) {
+            }
         }
     }
 }
