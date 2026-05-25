@@ -21,7 +21,7 @@ public class GiaoVienDialog extends JDialog {
     private final JComboBox<String> cboBangCap = new JComboBox<>(
             new String[] { "Đại học", "Thạc sĩ", "Tiến sĩ" });
     private final JComboBox<String> cboTrangThai = new JComboBox<>(
-            new String[] { "Dang day", "Nghi phep", "Da nghi" });
+            new String[] { "Đang dạy", "Nghỉ phép", "Đã nghỉ" });
 
     private GiaoVien result = null;
     private final GiaoVien editingTarget;

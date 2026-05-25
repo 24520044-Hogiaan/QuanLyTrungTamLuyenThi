@@ -120,7 +120,7 @@ public class GiaoVienPanel extends JPanel {
                 JTable t, Object val, boolean sel, boolean foc, int r, int c) {
             super.getTableCellRendererComponent(t, val, sel, foc, r, c);
             if (!sel && c == 6) {
-                boolean active = "Dang day".equals(String.valueOf(val));
+                boolean active = "Đang dạy".equals(String.valueOf(val));
                 setForeground(active ? UiTheme.SUCCESS : UiTheme.DANGER);
                 setFont(UiTheme.BODY_B);
             } else if (!sel) {

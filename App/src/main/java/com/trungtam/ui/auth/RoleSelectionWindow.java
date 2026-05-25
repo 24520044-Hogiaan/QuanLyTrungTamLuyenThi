@@ -3,44 +3,195 @@ package com.trungtam.ui.auth;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
+import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.function.Consumer;
 
+/**
+ * Cửa sổ chọn vai trò đăng nhập — thiết kế theo GUI Playbook.
+ */
 public class RoleSelectionWindow extends JFrame {
     public static final int ROLE_GIAOVIEN = 2;
     public static final int ROLE_HOCVIEN = 3;
 
     public RoleSelectionWindow(Consumer<Integer> onRoleSelected) {
-        setTitle("Chon vai tro dang nhap");
+        setTitle("Chọn vai trò đăng nhập");
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setSize(520, 320);
+        setSize(520, 380);
+        setMinimumSize(new Dimension(420, 320));
         setLocationRelativeTo(null);
+        setResizable(true);
 
-        JPanel root = new JPanel(new BorderLayout());
+        JPanel root = new JPanel(new BorderLayout(0, 0));
         root.setBackground(UiTheme.APP_BG);
-        root.setBorder(new EmptyBorder(20, 24, 20, 24));
 
-        JLabel title = new JLabel("Ban dang nhap voi vai tro nao?", SwingConstants.CENTER);
-        title.setFont(UiTheme.TITLE_M);
-        root.add(title, BorderLayout.NORTH);
+        // ── Header ──────────────────────────────────────────────────────────
+        JPanel header = new JPanel();
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+        header.setBackground(UiTheme.APP_BG);
+        header.setBorder(new EmptyBorder(28, 32, 12, 32));
 
-        JPanel center = new JPanel(new GridLayout(1, 2, 12, 0));
-        center.setOpaque(false);
+        JLabel lblTitle = new JLabel("Chọn vai trò đăng nhập");
+        lblTitle.setFont(UiTheme.TITLE_L);
+        lblTitle.setForeground(UiTheme.TEXT_PRIMARY);
+        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton gvButton = new JButton("Giao vien");
-        gvButton.setBackground(UiTheme.PRIMARY);
-        gvButton.setForeground(Color.WHITE);
-        gvButton.addActionListener(e -> onRoleSelected.accept(ROLE_GIAOVIEN));
+        JLabel lblSub = new JLabel("Vui lòng chọn vai trò để tiếp tục vào hệ thống");
+        lblSub.setFont(UiTheme.BODY);
+        lblSub.setForeground(UiTheme.TEXT_MUTED);
+        lblSub.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JButton hvButton = new JButton("Hoc vien");
-        hvButton.setBackground(UiTheme.SECONDARY);
-        hvButton.setForeground(Color.WHITE);
-        hvButton.addActionListener(e -> onRoleSelected.accept(ROLE_HOCVIEN));
+        header.add(lblTitle);
+        header.add(Box.createVerticalStrut(6));
+        header.add(lblSub);
+        root.add(header, BorderLayout.NORTH);
 
-        center.add(gvButton);
-        center.add(hvButton);
-        root.add(center, BorderLayout.CENTER);
+        // ── Role cards (centered, max-size constrained) ─────────────────────
+        JPanel cardPanel = new JPanel(new GridLayout(1, 2, 20, 0));
+        cardPanel.setOpaque(false);
+
+        cardPanel.add(buildRoleCard(
+                "Giáo Viên",
+                "Điểm danh, nhập điểm, lịch giảng dạy",
+                UiTheme.PRIMARY,
+                () -> onRoleSelected.accept(ROLE_GIAOVIEN)));
+
+        cardPanel.add(buildRoleCard(
+                "Học Viên",
+                "Xem điểm, đăng ký lớp, thanh toán học phí",
+                UiTheme.SECONDARY,
+                () -> onRoleSelected.accept(ROLE_HOCVIEN)));
+
+        // Wrap in a centering panel so cards don't stretch at large window sizes
+        JPanel centerWrapper = new JPanel(new GridBagLayout());
+        centerWrapper.setOpaque(false);
+        centerWrapper.setBorder(new EmptyBorder(16, 32, 28, 32));
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.NONE;
+        gbc.weightx = 1;
+        gbc.weighty = 1;
+        gbc.anchor = GridBagConstraints.CENTER;
+        cardPanel.setPreferredSize(new Dimension(440, 180));
+        cardPanel.setMinimumSize(new Dimension(300, 140));
+        centerWrapper.add(cardPanel, gbc);
+        root.add(centerWrapper, BorderLayout.CENTER);
+
+        // ── Footer ──────────────────────────────────────────────────────────
+        JLabel footer = new JLabel("Trung Tâm Đào Tạo  •  Phiên bản 1.0", SwingConstants.CENTER);
+        footer.setFont(UiTheme.CAPTION_I);
+        footer.setForeground(UiTheme.TEXT_MUTED);
+        footer.setBorder(new EmptyBorder(0, 0, 16, 0));
+        root.add(footer, BorderLayout.SOUTH);
+
         setContentPane(root);
+    }
+
+    /**
+     * Blend a color with white at a given ratio to produce a fully opaque tint.
+     * ratio=0.0 -> white, ratio=1.0 -> original color
+     */
+    private static Color tint(Color c, double ratio) {
+        int r = (int) (255 + (c.getRed()   - 255) * ratio);
+        int g = (int) (255 + (c.getGreen() - 255) * ratio);
+        int b = (int) (255 + (c.getBlue()  - 255) * ratio);
+        return new Color(r, g, b);
+    }
+
+    private JPanel buildRoleCard(String title, String desc, Color color, Runnable action) {
+        final Color hoverBg = tint(color, 0.05);
+
+        // Border luôn cố định 2px — chỉ đổi màu khi hover, không đổi kích thước
+        final Border normalBorder = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 2),
+                new EmptyBorder(19, 17, 19, 17));
+        final Border hoverBorder = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(color, 2),
+                new EmptyBorder(19, 17, 19, 17));
+
+        JPanel card = new JPanel();
+        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS));
+        card.setBackground(UiTheme.CARD_BG);
+        card.setBorder(normalBorder);
+        card.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+
+        // Icon circle
+        JLabel iconCircle = new JLabel() {
+            @Override
+            protected void paintComponent(Graphics g0) {
+                Graphics2D g = (Graphics2D) g0.create();
+                g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g.setColor(tint(color, 0.15));
+                g.fillOval(0, 0, 48, 48);
+                g.setColor(color);
+                g.setFont(new Font("Segoe UI", Font.BOLD, 20));
+                FontMetrics fm = g.getFontMetrics();
+                String initial = title.substring(0, 1);
+                int tx = (48 - fm.stringWidth(initial)) / 2;
+                int ty = (48 - fm.getHeight()) / 2 + fm.getAscent();
+                g.drawString(initial, tx, ty);
+                g.dispose();
+            }
+
+            @Override
+            public Dimension getPreferredSize() {
+                return new Dimension(48, 48);
+            }
+
+            @Override
+            public Dimension getMaximumSize() {
+                return new Dimension(48, 48);
+            }
+
+            @Override
+            public Dimension getMinimumSize() {
+                return new Dimension(48, 48);
+            }
+        };
+        iconCircle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(Box.createVerticalGlue());
+        card.add(iconCircle);
+        card.add(Box.createVerticalStrut(10));
+
+        // Title
+        JLabel lblTitle = new JLabel(title);
+        lblTitle.setFont(UiTheme.TITLE_S);
+        lblTitle.setForeground(UiTheme.TEXT_PRIMARY);
+        lblTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
+        card.add(lblTitle);
+        card.add(Box.createVerticalStrut(4));
+
+        // Description
+        JLabel lblDesc = new JLabel(
+                "<html><center>" + desc + "</center></html>");
+        lblDesc.setFont(UiTheme.CAPTION);
+        lblDesc.setForeground(UiTheme.TEXT_MUTED);
+        lblDesc.setAlignmentX(Component.CENTER_ALIGNMENT);
+        lblDesc.setHorizontalAlignment(SwingConstants.CENTER);
+        card.add(lblDesc);
+        card.add(Box.createVerticalGlue());
+
+        card.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                card.setBorder(hoverBorder);
+                card.setBackground(hoverBg);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                card.setBorder(normalBorder);
+                card.setBackground(UiTheme.CARD_BG);
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                action.run();
+            }
+        });
+
+        return card;
     }
 }

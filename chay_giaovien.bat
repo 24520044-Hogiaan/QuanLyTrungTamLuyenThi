@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 > nul
 title Quan Ly Giao Vien
 set JAVA_HOME=C:\Program Files\Java\jdk-25.0.2
 set MVN=C:\maven\apache-maven-3.9.9\bin\mvn.cmd

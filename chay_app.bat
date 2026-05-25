@@ -1,6 +1,6 @@
 @echo off
 chcp 65001 > nul
-title He Thong Quan Ly Trung Tam Dao Tao
+title Quan Ly Trung Tam Dao Tao
 echo.
 echo  ============================================
 echo   KHOI DONG HE THONG - CHON MODULE

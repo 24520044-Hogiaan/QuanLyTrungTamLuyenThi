@@ -3,6 +3,7 @@ package com.trungtam.ui;
 import com.trungtam.ui.giaovien.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class MainWindow extends JFrame {
@@ -17,17 +18,18 @@ public class MainWindow extends JFrame {
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(UiTheme.APP_BG);
 
-        // ── Sidebar ───────────────────────────────────────────────────────────
+        root.add(buildTopbar(), BorderLayout.NORTH);
+
         SidebarPanel sidebar = new SidebarPanel(UiTheme.PRIMARY);
-        sidebar.addSection("Chức Năng Chính");
+        sidebar.addSection("Chức năng chính");
         String[] titles = {
                 "Danh Sách GV", "Điểm Danh", "Nhập Điểm",
                 "Lịch Giảng Dạy", "Thống Kê Lớp", "Gửi Thông Báo"
         };
-        for (String t : titles)
+        for (String t : titles) {
             sidebar.addItem(t);
+        }
 
-        // ── Content area (CardLayout) ─────────────────────────────────────────
         JPanel[] panels = {
                 new GiaoVienPanel(), new DiemDanhPanel(), new NhapDiemPanel(),
                 new LichGiangDayPanel(), new ThongKeLopPanel(), new GuiThongBaoPanel()
@@ -37,13 +39,12 @@ public class MainWindow extends JFrame {
         JPanel contentArea = new JPanel(cards);
         contentArea.setBackground(UiTheme.APP_BG);
         for (int i = 0; i < panels.length; i++) {
-            contentArea.add(panels[i], String.valueOf(i));
+            contentArea.add(UiComponents.pageScroll(panels[i]), String.valueOf(i));
         }
         cards.show(contentArea, "0");
 
         sidebar.setSelectionListener(idx -> cards.show(contentArea, String.valueOf(idx)));
 
-        // Wrap sidebar in a scroll pane so it works on small screens
         JScrollPane sidebarScroll = new JScrollPane(sidebar,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
@@ -53,5 +54,42 @@ public class MainWindow extends JFrame {
         root.add(sidebarScroll, BorderLayout.WEST);
         root.add(contentArea, BorderLayout.CENTER);
         setContentPane(root);
+    }
+
+    private JComponent buildTopbar() {
+        JPanel topbar = new JPanel(new BorderLayout());
+        topbar.setBackground(UiTheme.CARD_BG);
+        topbar.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createMatteBorder(0, 0, 1, 0, UiTheme.CARD_BORDER),
+                new EmptyBorder(14, 18, 14, 18)));
+
+        JPanel left = new JPanel(new GridLayout(2, 1, 0, 2));
+        left.setOpaque(false);
+
+        JLabel title = new JLabel("Cổng giáo viên");
+        title.setFont(UiTheme.TITLE_M);
+        title.setForeground(UiTheme.TEXT_PRIMARY);
+
+        JLabel subtitle = new JLabel("Điểm danh, quản lý lớp, nhập điểm và thông báo");
+        subtitle.setFont(UiTheme.CAPTION);
+        subtitle.setForeground(UiTheme.TEXT_MUTED);
+
+        left.add(title);
+        left.add(subtitle);
+
+        JLabel badge = new JLabel("Giáo viên");
+        badge.setFont(UiTheme.CAPTION);
+        badge.setOpaque(true);
+        badge.setBackground(new Color(UiTheme.PRIMARY.getRed(), UiTheme.PRIMARY.getGreen(), UiTheme.PRIMARY.getBlue(), 24));
+        badge.setForeground(UiTheme.PRIMARY);
+        badge.setBorder(new EmptyBorder(6, 12, 6, 12));
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        right.setOpaque(false);
+        right.add(badge);
+
+        topbar.add(left, BorderLayout.WEST);
+        topbar.add(right, BorderLayout.EAST);
+        return topbar;
     }
 }
