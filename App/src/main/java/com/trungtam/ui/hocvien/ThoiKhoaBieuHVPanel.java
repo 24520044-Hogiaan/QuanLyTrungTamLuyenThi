@@ -1,5 +1,11 @@
 package com.trungtam.ui.hocvien;
 
+import com.trungtam.controller.DangKyController;
+import com.trungtam.controller.LopHocController;
+import com.trungtam.controller.GiaoVienController;
+import com.trungtam.model.DangKy;
+import com.trungtam.model.GiaoVien;
+import com.trungtam.model.LopHoc;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
@@ -9,40 +15,38 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.TextStyle;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
+import java.util.List;
 
 /**
- * Thời khóa biểu cá nhân học viên — thiết kế lưới tuần giống LichGiangDayPanel.
+ * Thời khóa biểu cá nhân học viên — dữ liệu từ database.
  */
 public class ThoiKhoaBieuHVPanel extends JPanel {
+
+    private final int maHocVien;
+    private final DangKyController dangKyController = new DangKyController();
+    private final LopHocController lopHocController = new LopHocController();
+    private final GiaoVienController giaoVienController = new GiaoVienController();
 
     private LocalDate currentMonday;
     private final JLabel lblWeek = new JLabel();
     private final JPanel gridPanel = new JPanel();
 
-    // {thứ (2–7), ca, tên lớp, phòng, giảng viên}
-    private static final Object[][] LICH_HV = {
-            { 2, "Sáng", "Toán 12A", "P.101", "Thầy Nguyễn Văn An" },
-            { 4, "Sáng", "Toán 12A", "P.101", "Thầy Nguyễn Văn An" },
-            { 6, "Sáng", "Toán 12A", "P.101", "Thầy Nguyễn Văn An" },
-            { 3, "Chiều", "Tiếng Anh 11B", "P.204", "Cô Phạm Thị Dung" },
-            { 5, "Chiều", "Tiếng Anh 11B", "P.204", "Cô Phạm Thị Dung" },
-            { 7, "Chiều", "Tiếng Anh 11B", "P.204", "Cô Phạm Thị Dung" },
+    private List<LichHocEntry> lichHoc = new ArrayList<>();
+    private List<String> classNames = new ArrayList<>();
+    private static final Color[] CLASS_BG_POOL = {
+            new Color(0xBBDEFB), new Color(0xC8E6C9), new Color(0xFFCDD2),
+            new Color(0xFFF9C4), new Color(0xD1C4E9), new Color(0xB2EBF2)
     };
-
-    private static final String[] CLASS_NAMES = { "Toán 12A", "Tiếng Anh 11B" };
-    private static final Color[] CLASS_BG = {
-            new Color(0xBBDEFB), new Color(0xC8E6C9)
-    };
-    private static final Color[] CLASS_FG = {
-            new Color(0x0D47A1), new Color(0x1B5E20)
+    private static final Color[] CLASS_FG_POOL = {
+            new Color(0x0D47A1), new Color(0x1B5E20), new Color(0xB71C1C),
+            new Color(0xF57F17), new Color(0x4A148C), new Color(0x006064)
     };
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM");
 
-    public ThoiKhoaBieuHVPanel() {
+    public ThoiKhoaBieuHVPanel(int maHocVien) {
+        this.maHocVien = maHocVien;
         setLayout(new BorderLayout(0, 10));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
@@ -54,7 +58,48 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
         gridPanel.setLayout(new GridBagLayout());
         gridPanel.setBackground(UiTheme.APP_BG);
         add(gridPanel, BorderLayout.CENTER);
+
+        loadData();
         render();
+    }
+
+    private void loadData() {
+        lichHoc.clear();
+        classNames.clear();
+
+        List<DangKy> myDK = dangKyController.getDangKyByHocVien(maHocVien);
+        List<LopHoc> allLop = lopHocController.layDanhSach();
+        List<GiaoVien> allGV = giaoVienController.layDanhSach();
+
+        Map<Integer, LopHoc> lopMap = new HashMap<>();
+        for (LopHoc lop : allLop) lopMap.put(lop.getMaLopHoc(), lop);
+        Map<Integer, GiaoVien> gvMap = new HashMap<>();
+        for (GiaoVien gv : allGV) gvMap.put(gv.getMaGiaoVien(), gv);
+
+        for (DangKy dk : myDK) {
+            LopHoc lop = lopMap.get(dk.getMaLopHoc());
+            if (lop == null) continue;
+            GiaoVien gv = gvMap.get(lop.getMaGiaoVien());
+            String tenGV = gv != null ? gv.getHoTen() : "";
+            String tenLop = lop.getTenLop();
+
+            if (!classNames.contains(tenLop)) classNames.add(tenLop);
+
+            // Parse tanSuat to determine schedule days
+            // tanSuat format examples: "2-4-6", "3-5-7", "2-4-6 Sang", "3-5-7 Chieu"
+            String tanSuat = lop.getTanSuat() != null ? lop.getTanSuat() : "";
+            String ca = tanSuat.toLowerCase().contains("chieu") ? "Chiều" : "Sáng";
+
+            String[] parts = tanSuat.split("\\s+")[0].split("-");
+            for (String part : parts) {
+                try {
+                    int thu = Integer.parseInt(part.trim());
+                    if (thu >= 2 && thu <= 7) {
+                        lichHoc.add(new LichHocEntry(thu, ca, tenLop, tenGV));
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
     }
 
     private JPanel buildTopBar() {
@@ -72,18 +117,9 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
         JButton btnNext = navBtn(">");
         JButton btnToday = navBtn("Hôm nay");
 
-        btnPrev.addActionListener(e -> {
-            currentMonday = currentMonday.minusWeeks(1);
-            render();
-        });
-        btnNext.addActionListener(e -> {
-            currentMonday = currentMonday.plusWeeks(1);
-            render();
-        });
-        btnToday.addActionListener(e -> {
-            currentMonday = LocalDate.now().with(DayOfWeek.MONDAY);
-            render();
-        });
+        btnPrev.addActionListener(e -> { currentMonday = currentMonday.minusWeeks(1); render(); });
+        btnNext.addActionListener(e -> { currentMonday = currentMonday.plusWeeks(1); render(); });
+        btnToday.addActionListener(e -> { currentMonday = LocalDate.now().with(DayOfWeek.MONDAY); render(); });
 
         JPanel navBar = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
         navBar.setOpaque(false);
@@ -102,14 +138,21 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
         JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 2));
         legend.setOpaque(false);
         legend.setBorder(new EmptyBorder(4, 0, 0, 0));
-        for (int i = 0; i < CLASS_NAMES.length; i++) {
-            JLabel dot = new JLabel("  " + CLASS_NAMES[i] + "  ");
+        for (int i = 0; i < classNames.size(); i++) {
+            int colorIdx = i % CLASS_BG_POOL.length;
+            JLabel dot = new JLabel("  " + classNames.get(i) + "  ");
             dot.setOpaque(true);
-            dot.setBackground(CLASS_BG[i]);
-            dot.setForeground(CLASS_FG[i]);
+            dot.setBackground(CLASS_BG_POOL[colorIdx]);
+            dot.setForeground(CLASS_FG_POOL[colorIdx]);
             dot.setFont(UiTheme.BODY_B);
-            dot.setBorder(BorderFactory.createLineBorder(CLASS_FG[i], 1));
+            dot.setBorder(BorderFactory.createLineBorder(CLASS_FG_POOL[colorIdx], 1));
             legend.add(dot);
+        }
+        if (classNames.isEmpty()) {
+            JLabel lbl = new JLabel("Chưa có lịch học. Hãy đăng ký lớp trước.");
+            lbl.setFont(UiTheme.CAPTION_I);
+            lbl.setForeground(UiTheme.TEXT_MUTED);
+            legend.add(lbl);
         }
         return legend;
     }
@@ -157,8 +200,8 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
                 int dayNum = d + 2;
                 boolean today = currentMonday.plusDays(d).equals(LocalDate.now());
                 String caRef = ca;
-                Optional<Object[]> slot = Arrays.stream(LICH_HV)
-                        .filter(r -> r[0].equals(dayNum) && r[1].equals(caRef))
+                Optional<LichHocEntry> slot = lichHoc.stream()
+                        .filter(r -> r.thu == dayNum && r.ca.equals(caRef))
                         .findFirst();
                 g.gridx = d + 1;
                 g.weightx = 1.0;
@@ -191,18 +234,15 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
         return lbl;
     }
 
-    private JLabel classCell(Object[] row, boolean todayCol) {
-        String lop = (String) row[2];
-        String phong = (String) row[3];
-        String giangVien = row.length > 4 ? (String) row[4] : "";
-        int idx = Arrays.asList(CLASS_NAMES).indexOf(lop);
-        Color bg = idx >= 0 ? (todayCol ? CLASS_BG[idx].darker() : CLASS_BG[idx]) : new Color(0xEEEEEE);
-        Color fg = idx >= 0 ? CLASS_FG[idx] : Color.DARK_GRAY;
+    private JLabel classCell(LichHocEntry entry, boolean todayCol) {
+        int idx = classNames.indexOf(entry.tenLop);
+        int colorIdx = idx >= 0 ? idx % CLASS_BG_POOL.length : 0;
+        Color bg = todayCol ? CLASS_BG_POOL[colorIdx].darker() : CLASS_BG_POOL[colorIdx];
+        Color fg = CLASS_FG_POOL[colorIdx];
 
         JLabel lbl = new JLabel(
-                "<html><center><b style='font-size:13px'>" + lop + "</b>"
-                        + "<br><span style='font-size:11px'>" + phong + "</span>"
-                        + "<br><i style='font-size:11px'>" + giangVien + "</i></center></html>",
+                "<html><center><b style='font-size:13px'>" + entry.tenLop + "</b>"
+                        + "<br><i style='font-size:11px'>" + entry.giaoVien + "</i></center></html>",
                 SwingConstants.CENTER);
         lbl.setOpaque(true);
         lbl.setBackground(bg);
@@ -226,5 +266,19 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return btn;
+    }
+
+    private static class LichHocEntry {
+        int thu;
+        String ca;
+        String tenLop;
+        String giaoVien;
+
+        LichHocEntry(int thu, String ca, String tenLop, String giaoVien) {
+            this.thu = thu;
+            this.ca = ca;
+            this.tenLop = tenLop;
+            this.giaoVien = giaoVien;
+        }
     }
 }

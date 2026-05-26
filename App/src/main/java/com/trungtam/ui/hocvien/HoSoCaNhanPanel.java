@@ -1,30 +1,37 @@
 package com.trungtam.ui.hocvien;
 
+import com.trungtam.controller.HocVienController;
+import com.trungtam.model.HocVien;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 
 /**
- * Hồ sơ cá nhân học viên
+ * Hồ sơ cá nhân học viên — dữ liệu từ database
  */
 public class HoSoCaNhanPanel extends JPanel {
 
-    private final JTextField txtHoTen = new JTextField("Nguyễn Minh Anh");
-    private final JTextField txtNgaySinh = new JTextField("10/03/2007");
-    private final JComboBox<String> cboGioiTinh = new JComboBox<>(new String[] { "Nam", "Nữ", "Khác" });
-    private final JTextField txtEmail = new JTextField("anh.nm@mail.com");
-    private final JTextField txtSDT = new JTextField("0901111111");
-    private final JTextField txtDiaChi = new JTextField("123 Đường Nguyễn Huệ, Q.1, TP.HCM");
-    private final JComboBox<String> cboKhoi = new JComboBox<>(new String[] { "Khối A", "Khối B", "Khối D" });
-    private final JTextField txtNV1 = new JTextField("Đại học Bách Khoa TP.HCM - CNTT");
-    private final JTextField txtNV2 = new JTextField("Đại học Khoa Học Tự Nhiên - Toán");
-    private final JTextField txtNV3 = new JTextField("Đại học Công Nghệ - HTTT");
+    private final int maHocVien;
+    private final HocVienController hocVienController = new HocVienController();
+
+    private final JTextField txtHoTen = new JTextField();
+    private final JTextField txtNgaySinh = new JTextField();
+    private final JComboBox<String> cboGioiTinh = new JComboBox<>(new String[] { "Nam", "Nu" });
+    private final JTextField txtEmail = new JTextField();
+    private final JTextField txtSDT = new JTextField();
+    private final JTextField txtDiaChi = new JTextField();
     private final JLabel lblThongBao = new JLabel(" ");
 
-    public HoSoCaNhanPanel() {
+    private static final DateTimeFormatter FMT = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    public HoSoCaNhanPanel(int maHocVien) {
+        this.maHocVien = maHocVien;
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L));
         setBackground(UiTheme.APP_BG);
@@ -40,6 +47,25 @@ public class HoSoCaNhanPanel extends JPanel {
         formWrapper.add(buildSaveBar(), BorderLayout.SOUTH);
 
         add(UiComponents.scrollPane(formWrapper), BorderLayout.CENTER);
+
+        loadData();
+    }
+
+    private void loadData() {
+        HocVien hv = hocVienController.timTheoMa(maHocVien);
+        if (hv == null) {
+            lblThongBao.setForeground(UiTheme.DANGER);
+            lblThongBao.setText("Không tìm thấy thông tin học viên (mã: " + maHocVien + ")");
+            return;
+        }
+        txtHoTen.setText(hv.getHoTen() != null ? hv.getHoTen() : "");
+        txtNgaySinh.setText(hv.getNgaySinh() != null ? hv.getNgaySinh().format(FMT) : "");
+        if (hv.getGioiTinh() != null) {
+            cboGioiTinh.setSelectedItem(hv.getGioiTinh());
+        }
+        txtEmail.setText(hv.getEmail() != null ? hv.getEmail() : "");
+        txtSDT.setText(hv.getSoDienThoai() != null ? hv.getSoDienThoai() : "");
+        txtDiaChi.setText(hv.getDiaChi() != null ? hv.getDiaChi() : "");
     }
 
     private JPanel buildForm() {
@@ -61,15 +87,6 @@ public class HoSoCaNhanPanel extends JPanel {
         addRow(form, g, 5, "Số điện thoại:", txtSDT);
         addRow(form, g, 6, "Địa chỉ:", txtDiaChi);
 
-        addSection(form, g, 7, "THÔNG TIN HỌC TẬP");
-        addRow(form, g, 8, "Khối thi:", cboKhoi);
-        cboKhoi.setSelectedIndex(0);
-
-        addSection(form, g, 9, "NGUYỆN VỌNG ĐẠI HỌC");
-        addRow(form, g, 10, "Nguyện vọng 1:", txtNV1);
-        addRow(form, g, 11, "Nguyện vọng 2:", txtNV2);
-        addRow(form, g, 12, "Nguyện vọng 3:", txtNV3);
-
         return form;
     }
 
@@ -80,7 +97,7 @@ public class HoSoCaNhanPanel extends JPanel {
         JButton btnDatLai = UiComponents.ghostButton("Đặt Lại");
         btnDatLai.addActionListener(e -> {
             lblThongBao.setText(" ");
-            txtHoTen.requestFocus();
+            loadData();
         });
 
         lblThongBao.setFont(UiTheme.CAPTION_I);
@@ -94,13 +111,46 @@ public class HoSoCaNhanPanel extends JPanel {
     }
 
     private void save() {
-        if (txtHoTen.getText().trim().isEmpty() || txtNgaySinh.getText().trim().isEmpty()) {
+        String hoTen = txtHoTen.getText().trim();
+        String ngaySinhStr = txtNgaySinh.getText().trim();
+
+        if (hoTen.isEmpty() || ngaySinhStr.isEmpty()) {
             lblThongBao.setForeground(UiTheme.DANGER);
             lblThongBao.setText("Vui lòng nhập đầy đủ các trường bắt buộc (*)");
             return;
         }
-        lblThongBao.setForeground(UiTheme.SUCCESS);
-        lblThongBao.setText("Cập nhật hồ sơ thành công!");
+
+        LocalDate ngaySinh;
+        try {
+            ngaySinh = LocalDate.parse(ngaySinhStr, FMT);
+        } catch (DateTimeParseException ex) {
+            lblThongBao.setForeground(UiTheme.DANGER);
+            lblThongBao.setText("Ngày sinh không hợp lệ (dd/MM/yyyy)");
+            return;
+        }
+
+        HocVien hv = hocVienController.timTheoMa(maHocVien);
+        if (hv == null) {
+            lblThongBao.setForeground(UiTheme.DANGER);
+            lblThongBao.setText("Lỗi: không tìm thấy học viên");
+            return;
+        }
+
+        hv.setHoTen(hoTen);
+        hv.setNgaySinh(ngaySinh);
+        hv.setGioiTinh((String) cboGioiTinh.getSelectedItem());
+        hv.setEmail(txtEmail.getText().trim());
+        hv.setSoDienThoai(txtSDT.getText().trim());
+        hv.setDiaChi(txtDiaChi.getText().trim());
+
+        boolean ok = hocVienController.capNhatHocVien(hv);
+        if (ok) {
+            lblThongBao.setForeground(UiTheme.SUCCESS);
+            lblThongBao.setText("Cập nhật hồ sơ thành công!");
+        } else {
+            lblThongBao.setForeground(UiTheme.DANGER);
+            lblThongBao.setText("Cập nhật thất bại. Vui lòng thử lại.");
+        }
     }
 
     private void addSection(JPanel form, GridBagConstraints g, int row, String title) {

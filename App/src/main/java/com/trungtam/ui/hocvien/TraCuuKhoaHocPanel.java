@@ -1,5 +1,13 @@
 package com.trungtam.ui.hocvien;
 
+import com.trungtam.controller.DangKyController;
+import com.trungtam.controller.GiaoVienController;
+import com.trungtam.controller.KhoaHocController;
+import com.trungtam.controller.LopHocController;
+import com.trungtam.model.DangKy;
+import com.trungtam.model.GiaoVien;
+import com.trungtam.model.KhoaHoc;
+import com.trungtam.model.LopHoc;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
@@ -8,10 +16,12 @@ import javax.swing.border.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Tra cứu khóa học/lớp học — dạng lưới thẻ (card grid).
+ * Tra cứu khóa học/lớp học — dữ liệu từ database, kiểm tra slot trước khi đăng ký.
  */
 public class TraCuuKhoaHocPanel extends JPanel {
 
@@ -20,27 +30,20 @@ public class TraCuuKhoaHocPanel extends JPanel {
             new Color(0xBF360C), new Color(0x00838F), new Color(0xAD1457)
     };
 
-    // {tên lớp, môn, giảng viên, buổi/tuần, cấp độ, màu index}
-    private static final Object[][] KHOA_HOC = {
-            { "Toán 12A", "Toán học", "Thầy Nguyễn Văn An", 3, "Nâng cao", 0 },
-            { "Toán 11B", "Toán học", "Thầy Nguyễn Văn An", 2, "Trung cấp", 0 },
-            { "Vật Lý 11B", "Vật lý", "Cô Trần Thị Bình", 2, "Trung cấp", 1 },
-            { "Vật Lý 12A", "Vật lý", "Cô Trần Thị Bình", 3, "Nâng cao", 1 },
-            { "Hóa Học 10C", "Hóa học", "Thầy Lê Hoàng Cường", 2, "Cơ bản", 2 },
-            { "Hóa Học 11A", "Hóa học", "Thầy Lê Hoàng Cường", 2, "Trung cấp", 2 },
-            { "Ngữ Văn 12A", "Ngữ văn", "Cô Phạm Thị Dung", 2, "Nâng cao", 3 },
-            { "Tiếng Anh 11B", "Tiếng Anh", "Cô Phạm Thị Dung", 3, "Trung cấp", 4 },
-            { "Tiếng Anh 12A", "Tiếng Anh", "Cô Phạm Thị Dung", 3, "Nâng cao", 4 },
-    };
+    private final int maHocVien;
+    private final LopHocController lopHocController = new LopHocController();
+    private final KhoaHocController khoaHocController = new KhoaHocController();
+    private final DangKyController dangKyController = new DangKyController();
+    private final GiaoVienController giaoVienController = new GiaoVienController();
 
     private final JPanel cardGrid = new JPanel(new GridLayout(0, 3, 14, 14));
     private final JTextField txtSearch = new JTextField(18);
-    private final JComboBox<String> cboMon = new JComboBox<>(
-            new String[] { "Tất cả môn", "Toán học", "Vật lý", "Hóa học", "Ngữ văn", "Tiếng Anh" });
-    private final JComboBox<String> cboCap = new JComboBox<>(
-            new String[] { "Tất cả cấp độ", "Cơ bản", "Trung cấp", "Nâng cao" });
+    private final JComboBox<String> cboCap = new JComboBox<>();
 
-    public TraCuuKhoaHocPanel() {
+    private List<LopHocInfo> allLopHoc = new ArrayList<>();
+
+    public TraCuuKhoaHocPanel(int maHocVien) {
+        this.maHocVien = maHocVien;
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L));
         setBackground(UiTheme.APP_BG);
@@ -62,7 +65,51 @@ public class TraCuuKhoaHocPanel extends JPanel {
         center.add(scroll, BorderLayout.CENTER);
         add(center, BorderLayout.CENTER);
 
-        renderCards(KHOA_HOC);
+        loadData();
+    }
+
+    private void loadData() {
+        allLopHoc.clear();
+
+        List<LopHoc> lopList = lopHocController.layDanhSach();
+        List<KhoaHoc> khoaHocList = khoaHocController.layDanhSach();
+        List<GiaoVien> gvList = giaoVienController.layDanhSach();
+
+        Map<Integer, KhoaHoc> khoaHocMap = new HashMap<>();
+        for (KhoaHoc kh : khoaHocList) khoaHocMap.put(kh.getMaKhoaHoc(), kh);
+
+        Map<Integer, GiaoVien> gvMap = new HashMap<>();
+        for (GiaoVien gv : gvList) gvMap.put(gv.getMaGiaoVien(), gv);
+
+        // Populate cboCap
+        cboCap.removeAllItems();
+        cboCap.addItem("Tất cả cấp độ");
+        java.util.Set<String> capDoSet = new java.util.LinkedHashSet<>();
+        for (KhoaHoc kh : khoaHocList) {
+            if (kh.getCapDo() != null) capDoSet.add(kh.getCapDo());
+        }
+        for (String cd : capDoSet) cboCap.addItem(cd);
+
+        for (LopHoc lop : lopList) {
+            // Only show classes that are open for registration
+            if (!"Dang mo".equalsIgnoreCase(lop.getTrangThai())) continue;
+
+            KhoaHoc kh = khoaHocMap.get(lop.getMaKhoaHoc());
+            GiaoVien gv = gvMap.get(lop.getMaGiaoVien());
+
+            LopHocInfo info = new LopHocInfo();
+            info.maLopHoc = lop.getMaLopHoc();
+            info.tenLop = lop.getTenLop();
+            info.tenKhoaHoc = kh != null ? kh.getTenKhoaHoc() : "";
+            info.capDo = kh != null ? kh.getCapDo() : "";
+            info.tenGiaoVien = gv != null ? gv.getHoTen() : "Chưa phân công";
+            info.tanSuat = lop.getTanSuat() != null ? lop.getTanSuat() : "";
+            info.siSoMax = lop.getSiSo();
+            info.siSoHienTai = dangKyController.countByLop(lop.getMaLopHoc());
+            allLopHoc.add(info);
+        }
+
+        renderCards(allLopHoc);
     }
 
     private JPanel buildFilterBar() {
@@ -81,24 +128,22 @@ public class TraCuuKhoaHocPanel extends JPanel {
             }
         });
 
-        cboMon.setFont(UiTheme.BODY);
         cboCap.setFont(UiTheme.BODY);
-        cboMon.addActionListener(e -> applyFilter());
         cboCap.addActionListener(e -> applyFilter());
 
         JLabel lblSearch = new JLabel("Tìm kiếm:");
         lblSearch.setFont(UiTheme.BODY);
-        JLabel lblMon = new JLabel("Môn:");
-        lblMon.setFont(UiTheme.BODY);
         JLabel lblCap = new JLabel("Cấp độ:");
         lblCap.setFont(UiTheme.BODY);
 
+        JButton btnRefresh = UiComponents.ghostButton("Làm mới");
+        btnRefresh.addActionListener(e -> loadData());
+
         bar.add(lblSearch);
         bar.add(txtSearch);
-        bar.add(lblMon);
-        bar.add(cboMon);
         bar.add(lblCap);
         bar.add(cboCap);
+        bar.add(btnRefresh);
         return bar;
     }
 
@@ -114,37 +159,31 @@ public class TraCuuKhoaHocPanel extends JPanel {
 
     private void applyFilter() {
         String kw = txtSearch.getText().trim().toLowerCase();
-        String mon = (String) cboMon.getSelectedItem();
         String cap = (String) cboCap.getSelectedItem();
 
-        List<Object[]> filtered = new ArrayList<>();
-        for (Object[] row : KHOA_HOC) {
-            boolean okMon = "Tất cả môn".equals(mon) || row[1].equals(mon);
-            boolean okCap = "Tất cả cấp độ".equals(cap) || row[4].equals(cap);
+        List<LopHocInfo> filtered = new ArrayList<>();
+        for (LopHocInfo info : allLopHoc) {
+            boolean okCap = "Tất cả cấp độ".equals(cap) || (info.capDo != null && info.capDo.equals(cap));
             boolean okKw = kw.isEmpty()
-                    || ((String) row[0]).toLowerCase().contains(kw)
-                    || ((String) row[2]).toLowerCase().contains(kw);
-            if (okMon && okCap && okKw)
-                filtered.add(row);
+                    || info.tenLop.toLowerCase().contains(kw)
+                    || info.tenGiaoVien.toLowerCase().contains(kw)
+                    || info.tenKhoaHoc.toLowerCase().contains(kw);
+            if (okCap && okKw) filtered.add(info);
         }
-        renderCards(filtered.toArray(new Object[0][]));
+        renderCards(filtered);
     }
 
-    private void renderCards(Object[][] data) {
+    private void renderCards(List<LopHocInfo> data) {
         cardGrid.removeAll();
-        for (Object[] row : data)
-            cardGrid.add(buildCard(row));
+        for (LopHocInfo info : data)
+            cardGrid.add(buildCard(info));
         cardGrid.revalidate();
         cardGrid.repaint();
     }
 
-    private JPanel buildCard(Object[] row) {
-        String tenLop = (String) row[0];
-        String mon = (String) row[1];
-        String gv = (String) row[2];
-        int buoi = (int) row[3];
-        String capDo = (String) row[4];
-        Color color = SUBJECT_COLORS[(int) row[5]];
+    private JPanel buildCard(LopHocInfo info) {
+        Color color = SUBJECT_COLORS[Math.abs(info.tenKhoaHoc.hashCode()) % SUBJECT_COLORS.length];
+        boolean conSlot = info.siSoHienTai < info.siSoMax;
 
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(UiTheme.CARD_BG);
@@ -155,7 +194,7 @@ public class TraCuuKhoaHocPanel extends JPanel {
         header.setBackground(color);
         header.setPreferredSize(new Dimension(0, 64));
         header.setBorder(new EmptyBorder(0, UiTheme.PAD_M, 0, UiTheme.PAD_M));
-        JLabel lblMon = new JLabel(mon);
+        JLabel lblMon = new JLabel(info.tenKhoaHoc);
         lblMon.setFont(UiTheme.BODY_B);
         lblMon.setForeground(new Color(255, 255, 255, 200));
         header.add(lblMon, BorderLayout.CENTER);
@@ -167,19 +206,19 @@ public class TraCuuKhoaHocPanel extends JPanel {
         body.setBackground(UiTheme.CARD_BG);
         body.setBorder(new EmptyBorder(12, UiTheme.PAD_M, 12, UiTheme.PAD_M));
 
-        JLabel lblTen = new JLabel(tenLop);
+        JLabel lblTen = new JLabel(info.tenLop);
         lblTen.setFont(UiTheme.TITLE_S);
         lblTen.setForeground(UiTheme.TEXT_PRIMARY);
         lblTen.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel lblGV = new JLabel(gv);
+        JLabel lblGV = new JLabel(info.tenGiaoVien);
         lblGV.setFont(UiTheme.BODY);
         lblGV.setForeground(UiTheme.TEXT_SECONDARY);
         lblGV.setAlignmentX(LEFT_ALIGNMENT);
 
-        JLabel lblInfo = new JLabel(buoi + " buổi/tuần");
+        JLabel lblInfo = new JLabel(info.tanSuat + " | Sĩ số: " + info.siSoHienTai + "/" + info.siSoMax);
         lblInfo.setFont(UiTheme.CAPTION);
-        lblInfo.setForeground(UiTheme.TEXT_MUTED);
+        lblInfo.setForeground(conSlot ? UiTheme.TEXT_MUTED : UiTheme.DANGER);
         lblInfo.setAlignmentX(LEFT_ALIGNMENT);
 
         body.add(lblTen);
@@ -192,18 +231,25 @@ public class TraCuuKhoaHocPanel extends JPanel {
         // Badge + button
         JPanel footer = new JPanel(new BorderLayout(8, 0));
         footer.setOpaque(false);
-        JLabel badge = new JLabel("  " + capDo + "  ");
+
+        String capDoText = info.capDo != null ? info.capDo : "";
+        JLabel badge = new JLabel("  " + capDoText + "  ");
         badge.setFont(UiTheme.CAPTION);
         badge.setOpaque(true);
         badge.setBackground(new Color(color.getRed(), color.getGreen(), color.getBlue(), 30));
         badge.setForeground(color);
         badge.setBorder(BorderFactory.createLineBorder(color, 1));
 
-        JButton btnDK = UiComponents.primaryButton("Đăng ký", color);
-        btnDK.setFont(UiTheme.BODY_B);
-        btnDK.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Đã gửi yêu cầu đăng ký lớp: " + tenLop,
-                "Đăng Ký Thành Công", JOptionPane.INFORMATION_MESSAGE));
+        JButton btnDK;
+        if (!conSlot) {
+            btnDK = UiComponents.ghostButton("Hết chỗ");
+            btnDK.setEnabled(false);
+        } else {
+            btnDK = UiComponents.primaryButton("Đăng ký", color);
+            btnDK.setFont(UiTheme.BODY_B);
+            btnDK.addActionListener(e -> handleDangKy(info));
+        }
+
         footer.add(badge, BorderLayout.WEST);
         footer.add(btnDK, BorderLayout.EAST);
         footer.setAlignmentX(LEFT_ALIGNMENT);
@@ -224,5 +270,61 @@ public class TraCuuKhoaHocPanel extends JPanel {
             }
         });
         return card;
+    }
+
+    private void handleDangKy(LopHocInfo info) {
+        // Check if already registered
+        if (dangKyController.existsDangKy(maHocVien, info.maLopHoc)) {
+            JOptionPane.showMessageDialog(this,
+                    "Bạn đã đăng ký lớp này rồi.",
+                    "Không thể đăng ký", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Re-check slot availability
+        int currentCount = dangKyController.countByLop(info.maLopHoc);
+        if (currentCount >= info.siSoMax) {
+            JOptionPane.showMessageDialog(this,
+                    "Lớp đã đầy, không còn chỗ trống.",
+                    "Không thể đăng ký", JOptionPane.WARNING_MESSAGE);
+            loadData(); // refresh
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Xác nhận đăng ký lớp: " + info.tenLop + "?\n" +
+                "Sau khi đăng ký, bạn cần thanh toán học phí để hoàn tất.",
+                "Xác Nhận Đăng Ký", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        DangKy dk = new DangKy();
+        dk.setMaHocVien(maHocVien);
+        dk.setMaLopHoc(info.maLopHoc);
+        dk.setHinhThucTT("1 thang");
+
+        boolean ok = dangKyController.insertDangKy(dk);
+        if (ok) {
+            JOptionPane.showMessageDialog(this,
+                    "Đăng ký lớp " + info.tenLop + " thành công!\n" +
+                    "Vui lòng thanh toán học phí tại mục Thanh Toán.",
+                    "Đăng Ký Thành Công", JOptionPane.INFORMATION_MESSAGE);
+            loadData(); // refresh to update slot count
+        } else {
+            JOptionPane.showMessageDialog(this,
+                    "Đăng ký thất bại. Vui lòng thử lại.",
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    // Helper class to hold display info
+    private static class LopHocInfo {
+        int maLopHoc;
+        String tenLop;
+        String tenKhoaHoc;
+        String capDo;
+        String tenGiaoVien;
+        String tanSuat;
+        int siSoMax;
+        int siSoHienTai;
     }
 }

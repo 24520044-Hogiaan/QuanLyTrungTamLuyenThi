@@ -1,5 +1,8 @@
 package com.trungtam.ui.hocvien;
 
+import com.trungtam.controller.HocVienController;
+import com.trungtam.model.HocVien;
+import com.trungtam.model.TaiKhoan;
 import com.trungtam.ui.SidebarPanel;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
@@ -13,7 +16,15 @@ import java.awt.*;
  */
 public class HocVienWindow extends JFrame {
 
-    public HocVienWindow() {
+    private final int maHocVien;
+
+    public HocVienWindow(TaiKhoan taiKhoan) {
+
+        // Resolve maHocVien from taiKhoan
+        HocVienController hvCtrl = new HocVienController();
+        HocVien hv = hvCtrl.timTheoTaiKhoan(taiKhoan.getMaTaiKhoan());
+        this.maHocVien = (hv != null) ? hv.getMaHocVien() : -1;
+
         setTitle("Cổng Học Viên – Trung Tâm Đào Tạo");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(1300, 820);
@@ -43,15 +54,15 @@ public class HocVienWindow extends JFrame {
         }
 
         JPanel[] panels = {
-                new HoSoCaNhanPanel(),
-                new TraCuuKhoaHocPanel(),
-                new ChuyenHuyLopPanel(),
-                new ThoiKhoaBieuHVPanel(),
-                new XemDiemHVPanel(),
-                new BangXepHangPanel(),
-                new TaiLieuPanel(),
-                new ThanhToanHocPhiPanel(),
-                new DanhGiaPanel()
+                new HoSoCaNhanPanel(maHocVien),
+                new TraCuuKhoaHocPanel(maHocVien),
+                new ChuyenHuyLopPanel(maHocVien),
+                new ThoiKhoaBieuHVPanel(maHocVien),
+                new XemDiemHVPanel(maHocVien),
+                new BangXepHangPanel(maHocVien),
+                new TaiLieuPanel(maHocVien),
+                new ThanhToanHocPhiPanel(maHocVien),
+                new DanhGiaPanel(maHocVien)
         };
 
         CardLayout cards = new CardLayout();
@@ -103,9 +114,24 @@ public class HocVienWindow extends JFrame {
         badge.setForeground(UiTheme.SECONDARY);
         badge.setBorder(new EmptyBorder(6, 12, 6, 12));
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JButton btnLogout = new JButton("Đăng xuất");
+        btnLogout.setFont(UiTheme.CAPTION);
+        btnLogout.setFocusPainted(false);
+        btnLogout.setCursor(java.awt.Cursor.getPredefinedCursor(java.awt.Cursor.HAND_CURSOR));
+        btnLogout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Bạn có chắc muốn đăng xuất?", "Đăng Xuất",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                dispose();
+                new com.trungtam.ui.auth.LoginWindow().setVisible(true);
+            }
+        });
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
         right.add(badge);
+        right.add(btnLogout);
 
         topbar.add(left, BorderLayout.WEST);
         topbar.add(right, BorderLayout.EAST);

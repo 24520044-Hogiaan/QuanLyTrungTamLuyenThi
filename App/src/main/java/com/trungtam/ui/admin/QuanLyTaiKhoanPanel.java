@@ -1,7 +1,6 @@
 package com.trungtam.ui.admin;
 
 import com.trungtam.controller.VaiTroController;
-import com.trungtam.model.TaiKhoan;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 import com.trungtam.util.DatabaseConnection;
@@ -14,8 +13,6 @@ import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class QuanLyTaiKhoanPanel extends JPanel {
 

@@ -12,4 +12,8 @@ public class YeuCauChuyenLopController {
     public boolean updateTrangThai(int maYeuCau, String trangThai, int maNhanVien) {
         return yeuCauDAO.updateTrangThai(maYeuCau, trangThai, maNhanVien);
     }
+
+    public boolean guiYeuCau(YeuCauChuyenLop yc) {
+        return yeuCauDAO.insertYeuCau(yc);
+    }
 }

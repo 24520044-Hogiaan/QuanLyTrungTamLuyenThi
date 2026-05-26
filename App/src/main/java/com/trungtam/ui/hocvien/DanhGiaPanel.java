@@ -1,24 +1,34 @@
 package com.trungtam.ui.hocvien;
 
+import com.trungtam.controller.DangKyController;
+import com.trungtam.controller.LopHocController;
+import com.trungtam.model.DangKy;
+import com.trungtam.model.LopHoc;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.util.*;
+import java.util.List;
 
 /**
- * Đánh giá chất lượng — học viên đánh giá khóa học và cơ sở vật chất.
+ * Đánh giá chất lượng — dữ liệu từ database (lớp đã đăng ký).
  */
 public class DanhGiaPanel extends JPanel {
 
-    private static final String[] LOP_CUA_HV = { "Toán 12A", "Tiếng Anh 11B" };
+    private final int maHocVien;
+    private final DangKyController dangKyController = new DangKyController();
+    private final LopHocController lopHocController = new LopHocController();
+
     private final int[] starKhoaHoc = { 0 };
     private final int[] starGiangVien = { 0 };
     private final int[] starCoSo = { 0 };
     private final int[] starDichVu = { 0 };
 
-    public DanhGiaPanel() {
+    public DanhGiaPanel(int maHocVien) {
+        this.maHocVien = maHocVien;
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L));
         setBackground(UiTheme.APP_BG);
@@ -40,7 +50,16 @@ public class DanhGiaPanel extends JPanel {
         g.weightx = 1;
 
         addSection(form, g, 0, "THÔNG TIN ĐÁNH GIÁ");
-        JComboBox<String> cboLop = new JComboBox<>(LOP_CUA_HV);
+
+        // Load registered classes
+        List<String> lopNames = getRegisteredClasses();
+        JComboBox<String> cboLop = new JComboBox<>();
+        if (lopNames.isEmpty()) {
+            cboLop.addItem("Chưa có lớp để đánh giá");
+            cboLop.setEnabled(false);
+        } else {
+            for (String name : lopNames) cboLop.addItem(name);
+        }
         cboLop.setFont(UiTheme.BODY);
         addRow(form, g, 1, "Khóa học cần đánh giá:", cboLop);
 
@@ -76,6 +95,7 @@ public class DanhGiaPanel extends JPanel {
 
         // Nút Gửi đặt ngoài scroll pane → luôn hiển thị dù cửa sổ nhỏ
         JButton btnGui = UiComponents.primaryButton("Gửi Đánh Giá", UiTheme.SECONDARY);
+        btnGui.setEnabled(!lopNames.isEmpty());
         btnGui.addActionListener(e -> {
             if (starKhoaHoc[0] == 0 || starGiangVien[0] == 0) {
                 JOptionPane.showMessageDialog(this,
@@ -92,6 +112,20 @@ public class DanhGiaPanel extends JPanel {
         bottomBar.setBackground(UiTheme.APP_BG);
         bottomBar.add(btnGui);
         add(bottomBar, BorderLayout.SOUTH);
+    }
+
+    private List<String> getRegisteredClasses() {
+        List<String> names = new ArrayList<>();
+        List<DangKy> myDK = dangKyController.getDangKyByHocVien(maHocVien);
+        List<LopHoc> allLop = lopHocController.layDanhSach();
+        Map<Integer, LopHoc> lopMap = new HashMap<>();
+        for (LopHoc lop : allLop) lopMap.put(lop.getMaLopHoc(), lop);
+
+        for (DangKy dk : myDK) {
+            LopHoc lop = lopMap.get(dk.getMaLopHoc());
+            if (lop != null) names.add(lop.getTenLop());
+        }
+        return names;
     }
 
     private JPanel buildRadioStars(int[] storage) {

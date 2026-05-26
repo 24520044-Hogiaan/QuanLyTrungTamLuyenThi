@@ -14,6 +14,8 @@ public class HocVienDAO {
 
     private static final String SELECT_BY_ID = SELECT_ALL + " WHERE MAHOCVIEN = ?";
 
+    private static final String SELECT_BY_TAIKHOAN = SELECT_ALL + " WHERE MATAIKHOAN = ?";
+
     private static final String INSERT =
             "INSERT INTO HOCVIEN (MAHOCVIEN, MATAIKHOAN, HOTEN, NGAYSINH, GIOITINH, DIACHI, SDT, EMAIL) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -40,6 +42,16 @@ public class HocVienDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement ps = conn.prepareStatement(SELECT_BY_ID)) {
             ps.setInt(1, maHocVien);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? mapRow(rs) : null;
+            }
+        }
+    }
+
+    public HocVien findByTaiKhoan(int maTaiKhoan) throws SQLException {
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_BY_TAIKHOAN)) {
+            ps.setInt(1, maTaiKhoan);
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next() ? mapRow(rs) : null;
             }

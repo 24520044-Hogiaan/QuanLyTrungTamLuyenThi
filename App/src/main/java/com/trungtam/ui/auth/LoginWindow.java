@@ -160,15 +160,18 @@ public class LoginWindow extends JFrame {
             return;
         }
 
+        loggedInAccount = tk;
         dispose();
         openWindowByRole(tk.getMaVaiTro());
     }
+
+    private TaiKhoan loggedInAccount;
 
     private void openWindowByRole(int roleId) {
         JFrame window = switch (roleId) {
             case 1 -> new AdminWindow();
             case 2 -> new MainWindow();
-            case 3 -> new HocVienWindow();
+            case 3 -> new HocVienWindow(loggedInAccount);
             case 4 -> new KeToanWindow();
             case 5 -> new QuanLyWindow();
             default -> null;

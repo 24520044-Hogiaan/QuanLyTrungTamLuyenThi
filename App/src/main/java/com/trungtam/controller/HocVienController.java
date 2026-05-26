@@ -29,6 +29,15 @@ public class HocVienController {
         }
     }
 
+    public HocVien timTheoTaiKhoan(int maTaiKhoan) {
+        try {
+            return hocVienDAO.findByTaiKhoan(maTaiKhoan);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
     public boolean themHocVien(HocVien hv) {
         try {
             hocVienDAO.insert(hv);

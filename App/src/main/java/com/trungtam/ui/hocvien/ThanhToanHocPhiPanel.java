@@ -1,24 +1,34 @@
 package com.trungtam.ui.hocvien;
 
+import com.trungtam.controller.DangKyController;
+import com.trungtam.controller.HoaDonController;
+import com.trungtam.controller.LopHocController;
+import com.trungtam.model.DangKy;
+import com.trungtam.model.HoaDonHocPhi;
+import com.trungtam.model.LopHoc;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
- * Thanh toán học phí: bên trái = thông tin CK + mã QR, bên phải = danh sách cần
- * đóng.
+ * Thanh toán học phí — dữ liệu từ database.
  */
 public class ThanhToanHocPhiPanel extends JPanel {
 
-    private static final Object[][] HP_DATA = {
-            { "Toán 12A", "Toán học", 3_500_000, "30/09/2025", "Đã đóng" },
-            { "Tiếng Anh 11B", "Tiếng Anh", 2_800_000, "30/09/2025", "Chưa đóng" },
-    };
+    private final int maHocVien;
+    private final HoaDonController hoaDonController = new HoaDonController();
+    private final DangKyController dangKyController = new DangKyController();
+    private final LopHocController lopHocController = new LopHocController();
+    private final JPanel listPanel = new JPanel();
 
-    public ThanhToanHocPhiPanel() {
+    public ThanhToanHocPhiPanel(int maHocVien) {
+        this.maHocVien = maHocVien;
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L));
         setBackground(UiTheme.APP_BG);
@@ -34,6 +44,60 @@ public class ThanhToanHocPhiPanel extends JPanel {
         split.setDividerSize(6);
         split.setBorder(null);
         add(split, BorderLayout.CENTER);
+
+        loadData();
+    }
+
+    private void loadData() {
+        listPanel.removeAll();
+
+        // Build a map of LopHoc for name lookup
+        List<LopHoc> lopList = lopHocController.layDanhSach();
+        Map<Integer, LopHoc> lopMap = new HashMap<>();
+        for (LopHoc lop : lopList) lopMap.put(lop.getMaLopHoc(), lop);
+
+        // Get all registrations for this student
+        List<DangKy> dangKyList = dangKyController.getDangKyByHocVien(maHocVien);
+
+        // Get all invoices for this student
+        List<HoaDonHocPhi> hoaDonList = hoaDonController.getHoaDonByHocVien(maHocVien);
+        Map<Integer, HoaDonHocPhi> hoaDonByLop = new HashMap<>();
+        for (HoaDonHocPhi hd : hoaDonList) {
+            // Use the latest invoice per class
+            hoaDonByLop.put(hd.getMaLop(), hd);
+        }
+
+        if (dangKyList.isEmpty()) {
+            JLabel lblEmpty = new JLabel("Bạn chưa đăng ký lớp học nào.");
+            lblEmpty.setFont(UiTheme.BODY);
+            lblEmpty.setForeground(UiTheme.TEXT_MUTED);
+            lblEmpty.setBorder(new EmptyBorder(20, 10, 20, 10));
+            listPanel.add(lblEmpty);
+        } else {
+            for (DangKy dk : dangKyList) {
+                LopHoc lop = lopMap.get(dk.getMaLopHoc());
+                String tenLop = lop != null ? lop.getTenLop() : "Lớp #" + dk.getMaLopHoc();
+                HoaDonHocPhi hd = hoaDonByLop.get(dk.getMaLopHoc());
+
+                String trangThaiTT;
+                double tongTien = 0;
+                if (hd != null) {
+                    trangThaiTT = hd.getTrangThaiHD() != null ? hd.getTrangThaiHD() : "Cho thanh toan";
+                    tongTien = hd.getTongTien();
+                } else {
+                    trangThaiTT = dk.getTrangThaiDKY() != null ? dk.getTrangThaiDKY() : "Cho thanh toan";
+                }
+
+                boolean daDong = "Da thanh toan".equalsIgnoreCase(trangThaiTT)
+                        || "Đã thanh toán".equalsIgnoreCase(trangThaiTT);
+
+                listPanel.add(buildCoursePaymentCard(tenLop, tongTien, trangThaiTT, daDong));
+                listPanel.add(Box.createVerticalStrut(10));
+            }
+        }
+
+        listPanel.revalidate();
+        listPanel.repaint();
     }
 
     private JPanel buildBankInfoPanel() {
@@ -144,29 +208,24 @@ public class ThanhToanHocPhiPanel extends JPanel {
 
         JLabel lbl = UiComponents.divider("CÁC KHÓA HỌC CỦA BẠN", UiTheme.SECONDARY);
         lbl.setFont(UiTheme.TITLE_S);
-        panel.add(lbl, BorderLayout.NORTH);
 
-        JPanel list = new JPanel();
-        list.setLayout(new BoxLayout(list, BoxLayout.Y_AXIS));
-        list.setBackground(UiTheme.APP_BG);
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setOpaque(false);
+        topBar.add(lbl, BorderLayout.CENTER);
+        JButton btnRefresh = UiComponents.ghostButton("Làm mới");
+        btnRefresh.addActionListener(e -> loadData());
+        topBar.add(btnRefresh, BorderLayout.EAST);
 
-        for (Object[] row : HP_DATA) {
-            list.add(buildCoursePaymentCard(row));
-            list.add(Box.createVerticalStrut(10));
-        }
+        panel.add(topBar, BorderLayout.NORTH);
 
-        panel.add(UiComponents.scrollPane(list), BorderLayout.CENTER);
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setBackground(UiTheme.APP_BG);
+
+        panel.add(UiComponents.scrollPane(listPanel), BorderLayout.CENTER);
         return panel;
     }
 
-    private JPanel buildCoursePaymentCard(Object[] row) {
-        String tenLop = (String) row[0];
-        String mon = (String) row[1];
-        int hocPhi = (int) row[2];
-        String hanDong = (String) row[3];
-        String trangThai = (String) row[4];
-        boolean daDong = "Đã đóng".equals(trangThai);
-
+    private JPanel buildCoursePaymentCard(String tenLop, double hocPhi, String trangThai, boolean daDong) {
         JPanel card = new JPanel(new BorderLayout(0, 6));
         card.setMaximumSize(new Dimension(Integer.MAX_VALUE, 100));
         card.setBorder(BorderFactory.createCompoundBorder(
@@ -174,11 +233,12 @@ public class ThanhToanHocPhiPanel extends JPanel {
                 new EmptyBorder(12, 14, 12, 14)));
         card.setBackground(daDong ? new Color(0xF1F8E9) : new Color(0xFFF8E1));
 
-        JLabel lblTen = new JLabel(tenLop + "  •  " + mon);
+        JLabel lblTen = new JLabel(tenLop);
         lblTen.setFont(UiTheme.BODY_B);
         lblTen.setForeground(UiTheme.TEXT_PRIMARY);
 
-        JLabel lblGia = new JLabel(String.format("%,d đ  |  Hạn: %s", hocPhi, hanDong));
+        String giaStr = hocPhi > 0 ? String.format("%,.0f đ", hocPhi) : "Chưa có hóa đơn";
+        JLabel lblGia = new JLabel(giaStr + "  |  Trạng thái: " + trangThai);
         lblGia.setFont(UiTheme.CAPTION);
         lblGia.setForeground(UiTheme.TEXT_MUTED);
 

@@ -1,5 +1,7 @@
 package com.trungtam.ui.giaovien;
 
+import com.trungtam.controller.LopHocController;
+import com.trungtam.model.LopHoc;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
@@ -8,35 +10,30 @@ import java.awt.*;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
+import java.util.List;
 
 /**
- * Panel lịch giảng dạy — tuần hiện tại, điều hướng tuần trước/sau.
+ * Panel lịch giảng dạy — dữ liệu từ database (lớp được phân công).
  */
 public class LichGiangDayPanel extends JPanel {
+
+    private final LopHocController lopHocController = new LopHocController();
 
     private LocalDate currentMonday;
     private final JLabel lblWeek = new JLabel();
     private final JPanel gridPanel = new JPanel();
 
-    // {thứ (2–7), ca, tên lớp, phòng}
-    private static final Object[][] LICH = {
-            { 2, "Sáng", "Toán 12A", "P.101" },
-            { 4, "Sáng", "Toán 12A", "P.101" },
-            { 3, "Chiều", "Lý 11B", "P.203" },
-            { 6, "Sáng", "Lý 11B", "P.203" },
-            { 5, "Chiều", "Hóa 10C", "P.305" },
-            { 7, "Sáng", "Hóa 10C", "P.305" },
-    };
+    private List<LichEntry> lichEntries = new ArrayList<>();
+    private List<String> classNames = new ArrayList<>();
 
-    private static final String[] CLASS_NAMES = { "Toán 12A", "Lý 11B", "Hóa 10C" };
     private static final Color[] CLASS_BG = {
-            new Color(0xBBDEFB), new Color(0xC8E6C9), new Color(0xFFE0B2)
+            new Color(0xBBDEFB), new Color(0xC8E6C9), new Color(0xFFE0B2),
+            new Color(0xFFCDD2), new Color(0xD1C4E9), new Color(0xB2EBF2)
     };
     private static final Color[] CLASS_FG = {
-            new Color(0x0D47A1), new Color(0x1B5E20), new Color(0xBF360C)
+            new Color(0x0D47A1), new Color(0x1B5E20), new Color(0xBF360C),
+            new Color(0xB71C1C), new Color(0x4A148C), new Color(0x006064)
     };
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM");
@@ -53,14 +50,44 @@ public class LichGiangDayPanel extends JPanel {
         gridPanel.setLayout(new GridBagLayout());
         gridPanel.setBackground(UiTheme.APP_BG);
         add(gridPanel, BorderLayout.CENTER);
+
+        loadData();
         render();
+    }
+
+    private void loadData() {
+        lichEntries.clear();
+        classNames.clear();
+
+        List<LopHoc> allLop = lopHocController.layDanhSach();
+
+        for (LopHoc lop : allLop) {
+            if (!"Dang mo".equalsIgnoreCase(lop.getTrangThai()) &&
+                !"Dang hoc".equalsIgnoreCase(lop.getTrangThai())) continue;
+
+            String tenLop = lop.getTenLop();
+            if (!classNames.contains(tenLop)) classNames.add(tenLop);
+
+            String tanSuat = lop.getTanSuat() != null ? lop.getTanSuat() : "";
+            String ca = tanSuat.toLowerCase().contains("chieu") ? "Chiều" : "Sáng";
+
+            String[] parts = tanSuat.split("\\s+")[0].split("-");
+            for (String part : parts) {
+                try {
+                    int thu = Integer.parseInt(part.trim());
+                    if (thu >= 2 && thu <= 7) {
+                        lichEntries.add(new LichEntry(thu, ca, tenLop));
+                    }
+                } catch (NumberFormatException ignored) {}
+            }
+        }
     }
 
     private JPanel buildTopBar() {
         JPanel bar = new JPanel(new BorderLayout(12, 0));
         bar.setOpaque(false);
 
-        JLabel title = new JLabel("LỊCH GIẢNG DẠY");
+        JLabel title = new JLabel("Lịch Giảng Dạy");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
 
@@ -71,18 +98,9 @@ public class LichGiangDayPanel extends JPanel {
         JButton btnNext = navBtn(">");
         JButton btnToday = navBtn("Hôm nay");
 
-        btnPrev.addActionListener(e -> {
-            currentMonday = currentMonday.minusWeeks(1);
-            render();
-        });
-        btnNext.addActionListener(e -> {
-            currentMonday = currentMonday.plusWeeks(1);
-            render();
-        });
-        btnToday.addActionListener(e -> {
-            currentMonday = LocalDate.now().with(DayOfWeek.MONDAY);
-            render();
-        });
+        btnPrev.addActionListener(e -> { currentMonday = currentMonday.minusWeeks(1); render(); });
+        btnNext.addActionListener(e -> { currentMonday = currentMonday.plusWeeks(1); render(); });
+        btnToday.addActionListener(e -> { currentMonday = LocalDate.now().with(DayOfWeek.MONDAY); render(); });
 
         JPanel navBar = new JPanel(new FlowLayout(FlowLayout.CENTER, 8, 0));
         navBar.setOpaque(false);
@@ -101,14 +119,21 @@ public class LichGiangDayPanel extends JPanel {
         JPanel legend = new JPanel(new FlowLayout(FlowLayout.LEFT, 14, 2));
         legend.setOpaque(false);
         legend.setBorder(new EmptyBorder(4, 0, 0, 0));
-        for (int i = 0; i < CLASS_NAMES.length; i++) {
-            JLabel dot = new JLabel("  " + CLASS_NAMES[i] + "  ");
+        for (int i = 0; i < classNames.size(); i++) {
+            int ci = i % CLASS_BG.length;
+            JLabel dot = new JLabel("  " + classNames.get(i) + "  ");
             dot.setOpaque(true);
-            dot.setBackground(CLASS_BG[i]);
-            dot.setForeground(CLASS_FG[i]);
+            dot.setBackground(CLASS_BG[ci]);
+            dot.setForeground(CLASS_FG[ci]);
             dot.setFont(UiTheme.BODY_B);
-            dot.setBorder(BorderFactory.createLineBorder(CLASS_FG[i], 1));
+            dot.setBorder(BorderFactory.createLineBorder(CLASS_FG[ci], 1));
             legend.add(dot);
+        }
+        if (classNames.isEmpty()) {
+            JLabel lbl = new JLabel("Chưa có lịch giảng dạy.");
+            lbl.setFont(UiTheme.CAPTION_I);
+            lbl.setForeground(UiTheme.TEXT_MUTED);
+            legend.add(lbl);
         }
         return legend;
     }
@@ -120,50 +145,37 @@ public class LichGiangDayPanel extends JPanel {
 
         GridBagConstraints g = new GridBagConstraints();
         g.fill = GridBagConstraints.BOTH;
-        g.insets = new Insets(2, 2, 2, 2);
+        g.insets = new Insets(1, 1, 1, 1);
 
-        // Header row — fixed height
-        g.gridy = 0;
-        g.weighty = 0;
-        g.gridx = 0;
-        g.weightx = 0.8;
+        g.gridy = 0; g.weighty = 0; g.gridx = 0; g.weightx = 0.7;
         gridPanel.add(headerCell("CA / NGÀY", false), g);
+
         for (int d = 0; d < 6; d++) {
             LocalDate day = currentMonday.plusDays(d);
             boolean isToday = day.equals(LocalDate.now());
-            String thu = day.getDayOfWeek()
-                    .getDisplayName(java.time.format.TextStyle.SHORT, Locale.of("vi"));
-            String label = "<html><center><b>" + thu.toUpperCase() + "</b><br>"
-                    + day.format(DATE_FMT) + "</center></html>";
-            g.gridx = d + 1;
-            g.weightx = 1.0;
+            String thu = day.getDayOfWeek().getDisplayName(java.time.format.TextStyle.SHORT, Locale.of("vi")).toUpperCase();
+            String label = "<html><center><b>" + thu + "</b><br>" + day.format(DATE_FMT) + "</center></html>";
+            g.gridx = d + 1; g.weightx = 1.0;
             gridPanel.add(headerCell(label, isToday), g);
         }
 
-        // Content rows — Sáng / Chiều
         String[] cas = { "Sáng", "Chiều" };
         for (int row = 0; row < cas.length; row++) {
-            g.gridy = row + 1;
-            g.weighty = 1.0;
+            g.gridy = row + 1; g.weighty = 1.0;
             String ca = cas[row];
-
-            g.gridx = 0;
-            g.weightx = 0.8;
+            g.gridx = 0; g.weightx = 0.7;
             gridPanel.add(caCell(ca), g);
 
             for (int d = 0; d < 6; d++) {
                 int dayNum = d + 2;
                 boolean today = currentMonday.plusDays(d).equals(LocalDate.now());
                 String caRef = ca;
-                Optional<Object[]> slot = Arrays.stream(LICH)
-                        .filter(r -> r[0].equals(dayNum) && r[1].equals(caRef))
-                        .findFirst();
-                g.gridx = d + 1;
-                g.weightx = 1.0;
+                Optional<LichEntry> slot = lichEntries.stream()
+                        .filter(r -> r.thu == dayNum && r.ca.equals(caRef)).findFirst();
+                g.gridx = d + 1; g.weightx = 1.0;
                 gridPanel.add(slot.isPresent() ? classCell(slot.get(), today) : emptyCell(today), g);
             }
         }
-
         gridPanel.revalidate();
         gridPanel.repaint();
     }
@@ -171,10 +183,10 @@ public class LichGiangDayPanel extends JPanel {
     private JLabel headerCell(String html, boolean isToday) {
         JLabel lbl = new JLabel(html, SwingConstants.CENTER);
         lbl.setOpaque(true);
-        lbl.setBackground(isToday ? new Color(0x0D47A1) : UiTheme.PRIMARY);
+        lbl.setBackground(isToday ? new Color(0x1565C0) : UiTheme.PRIMARY);
         lbl.setForeground(Color.WHITE);
         lbl.setFont(UiTheme.BODY_B);
-        lbl.setPreferredSize(new Dimension(0, 48));
+        lbl.setPreferredSize(new Dimension(0, 52));
         lbl.setBorder(BorderFactory.createLineBorder(new Color(0x0D47A1), 1));
         return lbl;
     }
@@ -189,16 +201,13 @@ public class LichGiangDayPanel extends JPanel {
         return lbl;
     }
 
-    private JLabel classCell(Object[] row, boolean todayCol) {
-        String lop = (String) row[2];
-        String phong = (String) row[3];
-        int idx = Arrays.asList(CLASS_NAMES).indexOf(lop);
-        Color bg = idx >= 0 ? (todayCol ? CLASS_BG[idx].darker() : CLASS_BG[idx]) : new Color(0xEEEEEE);
-        Color fg = idx >= 0 ? CLASS_FG[idx] : Color.DARK_GRAY;
-
+    private JLabel classCell(LichEntry entry, boolean todayCol) {
+        int idx = classNames.indexOf(entry.tenLop);
+        int ci = idx >= 0 ? idx % CLASS_BG.length : 0;
+        Color bg = todayCol ? CLASS_BG[ci].darker() : CLASS_BG[ci];
+        Color fg = CLASS_FG[ci];
         JLabel lbl = new JLabel(
-                "<html><center><b style='font-size:13px'>" + lop + "</b>"
-                        + "<br><span style='font-size:11px'>" + phong + "</span></center></html>",
+                "<html><center><b style='font-size:13px'>" + entry.tenLop + "</b></center></html>",
                 SwingConstants.CENTER);
         lbl.setOpaque(true);
         lbl.setBackground(bg);
@@ -222,5 +231,12 @@ public class LichGiangDayPanel extends JPanel {
         btn.setFocusPainted(false);
         btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         return btn;
+    }
+
+    private static class LichEntry {
+        int thu; String ca; String tenLop;
+        LichEntry(int thu, String ca, String tenLop) {
+            this.thu = thu; this.ca = ca; this.tenLop = tenLop;
+        }
     }
 }

@@ -88,9 +88,24 @@ public class QuanLyWindow extends JFrame {
         badge.setForeground(UiTheme.QUANLY);
         badge.setBorder(new EmptyBorder(6, 12, 6, 12));
 
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JButton btnLogout = new JButton("Đăng xuất");
+        btnLogout.setFont(UiTheme.CAPTION);
+        btnLogout.setFocusPainted(false);
+        btnLogout.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btnLogout.addActionListener(e -> {
+            int confirm = JOptionPane.showConfirmDialog(this,
+                    "Bạn có chắc muốn đăng xuất?", "Đăng Xuất",
+                    JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                dispose();
+                new com.trungtam.ui.auth.LoginWindow().setVisible(true);
+            }
+        });
+
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
         right.add(badge);
+        right.add(btnLogout);
 
         topbar.add(left, BorderLayout.WEST);
         topbar.add(right, BorderLayout.EAST);

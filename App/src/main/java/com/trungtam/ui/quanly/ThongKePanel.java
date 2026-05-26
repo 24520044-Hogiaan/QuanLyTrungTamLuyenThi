@@ -89,12 +89,12 @@ public class ThongKePanel extends JPanel {
 
         List<DangKy> dkList = dangKyController.getListDangKy();
         long totalDK = dkList.size();
-        long dangHoc = dkList.stream().filter(d -> "Dang hoc".equalsIgnoreCase(d.getTrangThaiDky())
-                || "Đang học".equalsIgnoreCase(d.getTrangThaiDky())).count();
-        long hoanThanh = dkList.stream().filter(d -> "Hoan thanh".equalsIgnoreCase(d.getTrangThaiDky())
-                || "Hoàn thành".equalsIgnoreCase(d.getTrangThaiDky())).count();
-        long daHuy = dkList.stream().filter(d -> "Da huy".equalsIgnoreCase(d.getTrangThaiDky())
-                || "Đã hủy".equalsIgnoreCase(d.getTrangThaiDky())).count();
+        long dangHoc = dkList.stream().filter(d -> "Dang hoc".equalsIgnoreCase(d.getTrangThaiDKY())
+                || "Đang học".equalsIgnoreCase(d.getTrangThaiDKY())).count();
+        long hoanThanh = dkList.stream().filter(d -> "Hoan thanh".equalsIgnoreCase(d.getTrangThaiDKY())
+                || "Hoàn thành".equalsIgnoreCase(d.getTrangThaiDKY())).count();
+        long daHuy = dkList.stream().filter(d -> "Da huy".equalsIgnoreCase(d.getTrangThaiDKY())
+                || "Đã hủy".equalsIgnoreCase(d.getTrangThaiDKY())).count();
 
         JPanel titlePanel = new JPanel(new BorderLayout());
         titlePanel.setOpaque(false);
@@ -118,9 +118,7 @@ public class ThongKePanel extends JPanel {
         int[] monthlyDK = new int[12];
         for (DangKy dk : dkList) {
             if (dk.getNgayDangKy() != null) {
-                java.util.Calendar cal = java.util.Calendar.getInstance();
-                cal.setTime(dk.getNgayDangKy());
-                monthlyDK[cal.get(java.util.Calendar.MONTH)] += 1;
+                monthlyDK[dk.getNgayDangKy().getMonthValue() - 1] += 1;
             }
         }
         String[] labels = { "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12" };
