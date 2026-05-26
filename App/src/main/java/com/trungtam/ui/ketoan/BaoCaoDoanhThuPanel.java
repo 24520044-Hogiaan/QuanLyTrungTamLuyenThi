@@ -11,13 +11,20 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.List;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class BaoCaoDoanhThuPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final HoaDonController hoaDonController = new HoaDonController();
     private final HoanTraController hoanTraController = new HoanTraController();
+    private JTable table;
 
     private static final String[] COT = {
             "Tháng", "Số HĐ Thu", "Tổng Thu", "Số HĐ Hoàn", "Tổng Hoàn", "Doanh Thu Ròng"
@@ -46,7 +53,7 @@ public class BaoCaoDoanhThuPanel extends JPanel {
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable table = new JTable(tableModel);
+        table = new JTable(tableModel);
         UiComponents.styleTable(table);
         UiComponents.setColumnAlignments(table,
                 SwingConstants.CENTER, SwingConstants.CENTER, SwingConstants.RIGHT,
@@ -67,10 +74,45 @@ public class BaoCaoDoanhThuPanel extends JPanel {
         JButton refreshBtn = UiComponents.ghostButton("Làm mới");
         refreshBtn.addActionListener(e -> loadData());
         right.add(refreshBtn);
-        right.add(UiComponents.ghostButton("Xuất file"));
+        JButton btnExport = UiComponents.ghostButton("Xuất file");
+        btnExport.addActionListener(e -> exportToExcel());
+        right.add(btnExport);
         panel.add(title, BorderLayout.WEST);
         panel.add(right, BorderLayout.EAST);
         return panel;
+    }
+
+    private void exportToExcel() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Chọn vị trí lưu báo cáo Excel");
+        fileChooser.setSelectedFile(new File("BaoCaoDoanhThu.xlsx"));
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            try (Workbook workbook = new XSSFWorkbook()) {
+                Sheet sheet = workbook.createSheet("DoanhThu");
+                Row headerRow = sheet.createRow(0);
+                for (int i = 0; i < table.getColumnCount(); i++) {
+                    headerRow.createCell(i).setCellValue(table.getColumnName(i));
+                }
+                for (int i = 0; i < table.getRowCount(); i++) {
+                    Row row = sheet.createRow(i + 1);
+                    for (int j = 0; j < table.getColumnCount(); j++) {
+                        Object val = table.getValueAt(i, j);
+                        if (val != null) row.createCell(j).setCellValue(val.toString());
+                    }
+                }
+                for (int i = 0; i < table.getColumnCount(); i++) {
+                    sheet.autoSizeColumn(i);
+                }
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    workbook.write(fos);
+                }
+                JOptionPane.showMessageDialog(this, "Xuất Excel thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void loadData() {

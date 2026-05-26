@@ -12,6 +12,12 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.time.Year;
 import java.util.List;
+import java.io.File;
+import java.io.FileOutputStream;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 public class ThongKePanel extends JPanel {
 
@@ -78,7 +84,7 @@ public class ThongKePanel extends JPanel {
                 BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
                 new EmptyBorder(16, 16, 16, 16)));
 
-        JPanel chartToolbar = buildChartToolbar(currentYear);
+        JPanel chartToolbar = buildChartToolbar(currentYear, monthlyRevenue, "Doanh Thu");
         chartArea.add(chartToolbar, BorderLayout.NORTH);
         chartArea.add(buildLineChart(labels, monthlyRevenue, "Doanh thu", UiTheme.DANGER), BorderLayout.CENTER);
 
@@ -139,7 +145,7 @@ public class ThongKePanel extends JPanel {
                 BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
                 new EmptyBorder(16, 16, 16, 16)));
 
-        JPanel chartToolbar = buildChartToolbar(currentYear);
+        JPanel chartToolbar = buildChartToolbar(currentYear, monthlyDK, "Dang Ky");
         chartArea.add(chartToolbar, BorderLayout.NORTH);
         chartArea.add(buildLineChart(labels, monthlyDK, "Số lượng đăng ký", UiTheme.DANGER), BorderLayout.CENTER);
 
@@ -148,7 +154,7 @@ public class ThongKePanel extends JPanel {
         return panel;
     }
 
-    private JPanel buildChartToolbar(int currentYear) {
+    private JPanel buildChartToolbar(int currentYear, int[] data, String reportType) {
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
         toolbar.setOpaque(false);
 
@@ -163,13 +169,44 @@ public class ThongKePanel extends JPanel {
         cboNam.setFont(UiTheme.BODY);
 
         JButton btnExcel = UiComponents.ghostButton("Xuất Excel");
-        btnExcel.addActionListener(e ->
-                JOptionPane.showMessageDialog(this, "Chức năng xuất Excel đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+        btnExcel.addActionListener(e -> exportToExcel(currentYear, data, reportType));
 
         toolbar.add(lblNam);
         toolbar.add(cboNam);
         toolbar.add(btnExcel);
         return toolbar;
+    }
+
+    private void exportToExcel(int year, int[] data, String reportType) {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setDialogTitle("Chọn vị trí lưu báo cáo Excel");
+        fileChooser.setSelectedFile(new File("ThongKe_" + reportType + "_" + year + ".xlsx"));
+        if (fileChooser.showSaveDialog(this) == JFileChooser.APPROVE_OPTION) {
+            File file = fileChooser.getSelectedFile();
+            try (Workbook workbook = new XSSFWorkbook()) {
+                Sheet sheet = workbook.createSheet(reportType);
+                Row headerRow = sheet.createRow(0);
+                headerRow.createCell(0).setCellValue("Tháng");
+                headerRow.createCell(1).setCellValue(reportType.equals("Doanh Thu") ? "Tổng Doanh Thu (VNĐ)" : "Số Lượng Đăng Ký");
+                
+                for (int i = 0; i < 12; i++) {
+                    Row row = sheet.createRow(i + 1);
+                    row.createCell(0).setCellValue("Tháng " + (i + 1));
+                    row.createCell(1).setCellValue(data[i]);
+                }
+                
+                sheet.autoSizeColumn(0);
+                sheet.autoSizeColumn(1);
+                
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    workbook.write(fos);
+                }
+                JOptionPane.showMessageDialog(this, "Xuất Excel thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi khi xuất file: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private JPanel buildLineChart(String[] labels, int[] values, String seriesName, Color lineColor) {
