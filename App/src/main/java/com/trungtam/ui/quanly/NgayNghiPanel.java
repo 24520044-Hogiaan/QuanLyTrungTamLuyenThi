@@ -19,6 +19,7 @@ public class NgayNghiPanel extends JPanel {
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
     private final NgayNghiLeController ngayNghiController = new NgayNghiLeController();
+    private JTable table;
 
     private static final String[] COT = { "Mã Ngày Nghỉ", "Ngày Bắt Đầu", "Ngày Kết Thúc" };
 
@@ -30,7 +31,7 @@ public class NgayNghiPanel extends JPanel {
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable table = new JTable(tableModel);
+        table = new JTable(tableModel);
         UiComponents.styleTable(table);
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
@@ -63,10 +64,52 @@ public class NgayNghiPanel extends JPanel {
     private JPanel buildBottomBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
         bar.setOpaque(false);
-        bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
-        bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
+
+        JButton btnThem = UiComponents.primaryButton("Thêm", UiTheme.SUCCESS);
+        btnThem.addActionListener(e -> {
+            JTextField txtBatDau = new JTextField("yyyy-MM-dd");
+            JTextField txtKetThuc = new JTextField("yyyy-MM-dd");
+            Object[] fields = { "Ngày Bắt Đầu (yyyy-MM-dd):", txtBatDau, "Ngày Kết Thúc (yyyy-MM-dd):", txtKetThuc };
+            int result = JOptionPane.showConfirmDialog(this, fields, "Thêm Ngày Nghỉ", JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                try {
+                    NgayNghiLe nn = new NgayNghiLe();
+                    nn.setNgayBatDau(java.time.LocalDate.parse(txtBatDau.getText().trim()));
+                    nn.setNgayKetThuc(java.time.LocalDate.parse(txtKetThuc.getText().trim()));
+                    if (ngayNghiController.addNgayNghi(nn)) {
+                        JOptionPane.showMessageDialog(this, "Thêm thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                        loadData();
+                    } else {
+                        JOptionPane.showMessageDialog(this, "Thêm thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    }
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(this, "Định dạng ngày không hợp lệ! (yyyy-MM-dd)", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        JButton btnXoa = UiComponents.primaryButton("Xóa", UiTheme.DANGER);
+        btnXoa.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) { JOptionPane.showMessageDialog(this, "Vui lòng chọn ngày nghỉ cần xóa!", "Thông báo", JOptionPane.WARNING_MESSAGE); return; }
+            int modelRow = table.convertRowIndexToModel(row);
+            int ma = (int) tableModel.getValueAt(modelRow, 0);
+            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc muốn xóa ngày nghỉ này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                if (ngayNghiController.deleteNgayNghi(ma)) {
+                    JOptionPane.showMessageDialog(this, "Xóa thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    loadData();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Xóa thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
         JButton refreshBtn = UiComponents.ghostButton("Làm mới");
         refreshBtn.addActionListener(e -> loadData());
+
+        bar.add(btnThem);
+        bar.add(btnXoa);
         bar.add(refreshBtn);
         return bar;
     }

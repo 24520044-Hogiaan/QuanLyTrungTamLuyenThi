@@ -65,11 +65,22 @@ public class QuanLyLopHocPanel extends JPanel {
     private JPanel buildBottomBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
         bar.setOpaque(false);
-        bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
-        bar.add(UiComponents.primaryButton("Chi tiết", UiTheme.PRIMARY));
-        bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
+
+        JButton btnThem = UiComponents.primaryButton("Thêm", UiTheme.SUCCESS);
+        btnThem.addActionListener(e -> JOptionPane.showMessageDialog(this, "Chức năng thêm lớp học đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+
+        JButton btnChiTiet = UiComponents.primaryButton("Chi tiết", UiTheme.PRIMARY);
+        btnChiTiet.addActionListener(e -> JOptionPane.showMessageDialog(this, "Chức năng xem chi tiết lớp đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+
+        JButton btnXoa = UiComponents.primaryButton("Xóa", UiTheme.DANGER);
+        btnXoa.addActionListener(e -> JOptionPane.showMessageDialog(this, "Chức năng xóa lớp học đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+
         JButton refreshBtn = UiComponents.ghostButton("Làm mới");
         refreshBtn.addActionListener(e -> loadData());
+
+        bar.add(btnThem);
+        bar.add(btnChiTiet);
+        bar.add(btnXoa);
         bar.add(refreshBtn);
         return bar;
     }

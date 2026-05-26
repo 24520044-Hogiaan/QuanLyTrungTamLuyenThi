@@ -19,6 +19,7 @@ public class QuanLyGiaoVienPanel extends JPanel {
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
     private final GiaoVienController giaoVienController = new GiaoVienController();
+    private JTable table;
 
     private static final String[] COT = {
             "Mã GV", "Mã Nhân Viên", "Họ Tên", "Bằng Cấp", "Trạng Thái"
@@ -32,7 +33,7 @@ public class QuanLyGiaoVienPanel extends JPanel {
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable table = new JTable(tableModel);
+        table = new JTable(tableModel);
         UiComponents.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rowSorter = new TableRowSorter<>(tableModel);
@@ -68,14 +69,121 @@ public class QuanLyGiaoVienPanel extends JPanel {
     private JPanel buildBottomBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
         bar.setOpaque(false);
-        bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
-        bar.add(UiComponents.primaryButton("Sửa", UiTheme.PRIMARY));
-        bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
+
+        JButton btnThem = UiComponents.primaryButton("Thêm", UiTheme.SUCCESS);
+        btnThem.addActionListener(e -> themGiaoVien());
+
+        JButton btnSua = UiComponents.primaryButton("Sửa", UiTheme.PRIMARY);
+        btnSua.addActionListener(e -> suaGiaoVien());
+
+        JButton btnXoa = UiComponents.primaryButton("Xóa", UiTheme.DANGER);
+        btnXoa.addActionListener(e -> xoaGiaoVien());
+
         JButton refreshBtn = UiComponents.ghostButton("Làm Mới");
         refreshBtn.addActionListener(e -> loadData());
+
+        bar.add(btnThem);
+        bar.add(btnSua);
+        bar.add(btnXoa);
         bar.add(refreshBtn);
-        bar.add(UiComponents.primaryButton("Phân Công", UiTheme.QUANLY));
         return bar;
+    }
+
+    private void themGiaoVien() {
+        JTextField txtHoTen = new JTextField();
+        JTextField txtBangCap = new JTextField();
+        JTextField txtMaNV = new JTextField();
+        JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Dang day", "Nghi phep", "Da nghi"});
+
+        Object[] fields = {
+                "Họ Tên:", txtHoTen,
+                "Bằng Cấp:", txtBangCap,
+                "Mã Nhân Viên:", txtMaNV,
+                "Trạng Thái:", cboTrangThai
+        };
+        int result = JOptionPane.showConfirmDialog(this, fields, "Thêm Giáo Viên", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            String hoTen = txtHoTen.getText().trim();
+            if (hoTen.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Họ tên không được để trống!", "Lỗi", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            GiaoVien gv = new GiaoVien();
+            gv.setHoTen(hoTen);
+            gv.setBangCap(txtBangCap.getText().trim());
+            try { gv.setMaNhanVien(Integer.parseInt(txtMaNV.getText().trim())); } catch (NumberFormatException ignored) {}
+            gv.setTrangThai((String) cboTrangThai.getSelectedItem());
+
+            if (giaoVienController.themGiaoVien(gv)) {
+                JOptionPane.showMessageDialog(this, "Thêm giáo viên thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Thêm giáo viên thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void suaGiaoVien() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn giáo viên cần sửa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int modelRow = table.convertRowIndexToModel(row);
+        int maGV = (int) tableModel.getValueAt(modelRow, 0);
+
+        GiaoVien gv = giaoVienController.timTheoMa(maGV);
+        if (gv == null) {
+            JOptionPane.showMessageDialog(this, "Không tìm thấy giáo viên!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        JTextField txtHoTen = new JTextField(gv.getHoTen());
+        JTextField txtBangCap = new JTextField(gv.getBangCap() != null ? gv.getBangCap() : "");
+        JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Dang day", "Nghi phep", "Da nghi"});
+        cboTrangThai.setSelectedItem(gv.getTrangThai());
+
+        Object[] fields = {
+                "Họ Tên:", txtHoTen,
+                "Bằng Cấp:", txtBangCap,
+                "Trạng Thái:", cboTrangThai
+        };
+        int result = JOptionPane.showConfirmDialog(this, fields, "Sửa Giáo Viên (Mã: " + maGV + ")", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            gv.setHoTen(txtHoTen.getText().trim());
+            gv.setBangCap(txtBangCap.getText().trim());
+            gv.setTrangThai((String) cboTrangThai.getSelectedItem());
+
+            if (giaoVienController.capNhatGiaoVien(gv)) {
+                JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Cập nhật thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void xoaGiaoVien() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn giáo viên cần xóa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int modelRow = table.convertRowIndexToModel(row);
+        int maGV = (int) tableModel.getValueAt(modelRow, 0);
+        String hoTen = (String) tableModel.getValueAt(modelRow, 2);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn xóa giáo viên \"" + hoTen + "\" (Mã: " + maGV + ")?",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            if (giaoVienController.xoaGiaoVien(maGV)) {
+                JOptionPane.showMessageDialog(this, "Xóa thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa thất bại! Giáo viên có thể đang được phân công lớp.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void loadData() {

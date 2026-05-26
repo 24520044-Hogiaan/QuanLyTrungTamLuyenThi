@@ -19,6 +19,7 @@ public class QuanLyBoMonPanel extends JPanel {
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
     private final BoMonController boMonController = new BoMonController();
+    private JTable table;
 
     private static final String[] COT = { "Mã Bộ Môn", "Tên Bộ Môn" };
 
@@ -32,8 +33,9 @@ public class QuanLyBoMonPanel extends JPanel {
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable table = new JTable(tableModel);
+        table = new JTable(tableModel);
         UiComponents.styleTable(table);
+        table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
 
@@ -67,13 +69,87 @@ public class QuanLyBoMonPanel extends JPanel {
     private JPanel buildBottomBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
         bar.setOpaque(false);
-        bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
-        bar.add(UiComponents.primaryButton("Sửa", UiTheme.PRIMARY));
-        bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
+
+        JButton btnThem = UiComponents.primaryButton("Thêm", UiTheme.SUCCESS);
+        btnThem.addActionListener(e -> themBoMon());
+
+        JButton btnSua = UiComponents.primaryButton("Sửa", UiTheme.PRIMARY);
+        btnSua.addActionListener(e -> suaBoMon());
+
+        JButton btnXoa = UiComponents.primaryButton("Xóa", UiTheme.DANGER);
+        btnXoa.addActionListener(e -> xoaBoMon());
+
         JButton refreshBtn = UiComponents.ghostButton("Làm mới");
         refreshBtn.addActionListener(e -> loadData());
+
+        bar.add(btnThem);
+        bar.add(btnSua);
+        bar.add(btnXoa);
         bar.add(refreshBtn);
         return bar;
+    }
+
+    private void themBoMon() {
+        String ten = JOptionPane.showInputDialog(this, "Tên Bộ Môn:", "Thêm Bộ Môn", JOptionPane.PLAIN_MESSAGE);
+        if (ten != null && !ten.trim().isEmpty()) {
+            BoMon bm = new BoMon();
+            bm.setTenBoMon(ten.trim());
+            if (boMonController.addBoMon(bm)) {
+                JOptionPane.showMessageDialog(this, "Thêm bộ môn thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Thêm bộ môn thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void suaBoMon() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn bộ môn cần sửa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int modelRow = table.convertRowIndexToModel(row);
+        int maBM = (int) tableModel.getValueAt(modelRow, 0);
+        String tenCu = (String) tableModel.getValueAt(modelRow, 1);
+
+        String tenMoi = JOptionPane.showInputDialog(this, "Tên Bộ Môn:", tenCu);
+        if (tenMoi != null && !tenMoi.trim().isEmpty()) {
+            BoMon bm = new BoMon();
+            bm.setMaBoMon(maBM);
+            bm.setTenBoMon(tenMoi.trim());
+            if (boMonController.editBoMon(bm)) {
+                JOptionPane.showMessageDialog(this, "Cập nhật thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Cập nhật thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
+    private void xoaBoMon() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn bộ môn cần xóa!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        int modelRow = table.convertRowIndexToModel(row);
+        int maBM = (int) tableModel.getValueAt(modelRow, 0);
+        String ten = (String) tableModel.getValueAt(modelRow, 1);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Bạn có chắc muốn xóa bộ môn \"" + ten + "\"?",
+                "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            BoMon bm = new BoMon();
+            bm.setMaBoMon(maBM);
+            if (boMonController.deleteBoMon(bm)) {
+                JOptionPane.showMessageDialog(this, "Xóa thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Xóa thất bại! Bộ môn có thể đang có khóa học liên kết.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        }
     }
 
     private void loadData() {
