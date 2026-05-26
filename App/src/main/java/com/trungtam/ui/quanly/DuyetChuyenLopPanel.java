@@ -19,6 +19,7 @@ public class DuyetChuyenLopPanel extends JPanel {
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
     private final YeuCauChuyenLopController ycController = new YeuCauChuyenLopController();
+    private JTable table;
 
     private static final String[] COT = {
             "Mã YC", "Mã HV", "Lớp Cũ", "Lớp Mới", "Lý Do",
@@ -33,7 +34,7 @@ public class DuyetChuyenLopPanel extends JPanel {
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable table = new JTable(tableModel);
+        table = new JTable(tableModel);
         UiComponents.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rowSorter = new TableRowSorter<>(tableModel);
@@ -89,12 +90,52 @@ public class DuyetChuyenLopPanel extends JPanel {
     private JPanel buildBottomBar() {
         JPanel bar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 6));
         bar.setOpaque(false);
-        bar.add(UiComponents.primaryButton("Duyệt", UiTheme.SUCCESS));
-        bar.add(UiComponents.primaryButton("Từ chối", UiTheme.DANGER));
+        
+        JButton btnDuyet = UiComponents.primaryButton("Duyệt", UiTheme.SUCCESS);
+        btnDuyet.addActionListener(e -> xuLyYeuCau("Chap thuan"));
+        
+        JButton btnTuChoi = UiComponents.primaryButton("Từ chối", UiTheme.DANGER);
+        btnTuChoi.addActionListener(e -> xuLyYeuCau("Tu choi"));
+        
+        bar.add(btnDuyet);
+        bar.add(btnTuChoi);
+        
         JButton refreshBtn = UiComponents.ghostButton("Làm Mới");
         refreshBtn.addActionListener(e -> loadData());
         bar.add(refreshBtn);
         return bar;
+    }
+
+    private void xuLyYeuCau(String trangThaiMoi) {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn một yêu cầu để xử lý!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(row);
+        int maYC = (int) tableModel.getValueAt(modelRow, 0);
+        String currentStatus = (String) tableModel.getValueAt(modelRow, 6);
+
+        if (!"Cho duyet".equalsIgnoreCase(currentStatus)) {
+            JOptionPane.showMessageDialog(this, "Chỉ có thể xử lý yêu cầu đang 'Cho duyet'!", "Cảnh báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String input = JOptionPane.showInputDialog(this, "Nhập Mã Nhân Viên của bạn để xác nhận:", "Xác nhận", JOptionPane.QUESTION_MESSAGE);
+        if (input == null || input.trim().isEmpty()) return;
+
+        try {
+            int maNV = Integer.parseInt(input.trim());
+            if (ycController.updateTrangThai(maYC, trangThaiMoi, maNV)) {
+                JOptionPane.showMessageDialog(this, "Xử lý thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                loadData();
+            } else {
+                JOptionPane.showMessageDialog(this, "Xử lý thất bại! Vui lòng kiểm tra lại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "Mã Nhân Viên không hợp lệ!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void loadData() {

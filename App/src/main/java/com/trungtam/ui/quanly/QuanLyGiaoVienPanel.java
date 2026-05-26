@@ -124,28 +124,34 @@ public class QuanLyGiaoVienPanel extends JPanel {
     }
 
     private void themGiaoVien() {
-        JTextField txtHoTen = new JTextField();
-        JTextField txtBangCap = new JTextField();
         JTextField txtMaNV = new JTextField();
+        
+        JComboBox<String> cboChuyenMon = new JComboBox<>();
+        List<BoMon> dsBoMon = boMonController.getListBoMon();
+        for (BoMon bm : dsBoMon) {
+            cboChuyenMon.addItem(bm.getMaBoMon() + " - " + bm.getTenBoMon());
+        }
+        
+        JTextField txtBangCap = new JTextField();
         JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Dang day", "Nghi phep", "Da nghi"});
 
         Object[] fields = {
-                "Họ Tên:", txtHoTen,
-                "Bằng Cấp:", txtBangCap,
                 "Mã Nhân Viên:", txtMaNV,
+                "Chuyên Môn:", cboChuyenMon,
+                "Bằng Cấp:", txtBangCap,
                 "Trạng Thái:", cboTrangThai
         };
         int result = JOptionPane.showConfirmDialog(this, fields, "Thêm Giáo Viên", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
-            String hoTen = txtHoTen.getText().trim();
-            if (hoTen.isEmpty()) {
-                JOptionPane.showMessageDialog(this, "Họ tên không được để trống!", "Lỗi", JOptionPane.WARNING_MESSAGE);
-                return;
-            }
             GiaoVien gv = new GiaoVien();
-            gv.setHoTen(hoTen);
-            gv.setBangCap(txtBangCap.getText().trim());
             try { gv.setMaNhanVien(Integer.parseInt(txtMaNV.getText().trim())); } catch (NumberFormatException ignored) {}
+            
+            String selectedBM = (String) cboChuyenMon.getSelectedItem();
+            if (selectedBM != null && selectedBM.contains(" - ")) {
+                gv.setMaBoMon(selectedBM.split(" - ")[0]);
+            }
+            
+            gv.setBangCap(txtBangCap.getText().trim());
             gv.setTrangThai((String) cboTrangThai.getSelectedItem());
 
             if (giaoVienController.themGiaoVien(gv)) {
@@ -172,19 +178,41 @@ public class QuanLyGiaoVienPanel extends JPanel {
             return;
         }
 
-        JTextField txtHoTen = new JTextField(gv.getHoTen());
+        JTextField txtMaNV = new JTextField(String.valueOf(gv.getMaNhanVien()));
+        
+        JComboBox<String> cboChuyenMon = new JComboBox<>();
+        List<BoMon> dsBoMon = boMonController.getListBoMon();
+        String currentBmStr = null;
+        for (BoMon bm : dsBoMon) {
+            String item = bm.getMaBoMon() + " - " + bm.getTenBoMon();
+            cboChuyenMon.addItem(item);
+            if (String.valueOf(bm.getMaBoMon()).equals(gv.getMaBoMon())) {
+                currentBmStr = item;
+            }
+        }
+        if (currentBmStr != null) {
+            cboChuyenMon.setSelectedItem(currentBmStr);
+        }
+
         JTextField txtBangCap = new JTextField(gv.getBangCap() != null ? gv.getBangCap() : "");
         JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Dang day", "Nghi phep", "Da nghi"});
         cboTrangThai.setSelectedItem(gv.getTrangThai());
 
         Object[] fields = {
-                "Họ Tên:", txtHoTen,
+                "Mã Nhân Viên:", txtMaNV,
+                "Chuyên Môn:", cboChuyenMon,
                 "Bằng Cấp:", txtBangCap,
                 "Trạng Thái:", cboTrangThai
         };
         int result = JOptionPane.showConfirmDialog(this, fields, "Sửa Giáo Viên (Mã: " + maGV + ")", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
-            gv.setHoTen(txtHoTen.getText().trim());
+            try { gv.setMaNhanVien(Integer.parseInt(txtMaNV.getText().trim())); } catch (NumberFormatException ignored) {}
+            
+            String selectedBM = (String) cboChuyenMon.getSelectedItem();
+            if (selectedBM != null && selectedBM.contains(" - ")) {
+                gv.setMaBoMon(selectedBM.split(" - ")[0]);
+            }
+            
             gv.setBangCap(txtBangCap.getText().trim());
             gv.setTrangThai((String) cboTrangThai.getSelectedItem());
 
