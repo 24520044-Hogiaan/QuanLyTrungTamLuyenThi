@@ -1,5 +1,9 @@
 package com.trungtam.ui.ketoan;
 
+import com.trungtam.controller.HoaDonController;
+import com.trungtam.controller.HoanTraController;
+import com.trungtam.model.HoaDonHocPhi;
+import com.trungtam.model.HoanTra;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
@@ -7,43 +11,33 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 public class BaoCaoDoanhThuPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
+    private final HoaDonController hoaDonController = new HoaDonController();
+    private final HoanTraController hoanTraController = new HoanTraController();
 
     private static final String[] COT = {
             "Tháng", "Số HĐ Thu", "Tổng Thu", "Số HĐ Hoàn", "Tổng Hoàn", "Doanh Thu Ròng"
     };
 
+    private final JLabel lblTotalRevenue = new JLabel("0 VNĐ");
+    private final JLabel lblTotalRefund = new JLabel("0 VNĐ");
+    private final JLabel lblNetRevenue = new JLabel("0 VNĐ");
+
     public BaoCaoDoanhThuPanel() {
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
-
         add(buildTopBar(), BorderLayout.NORTH);
 
-        // KPI cards
         JPanel kpiRow = new JPanel(new GridLayout(1, 3, 16, 0));
         kpiRow.setOpaque(false);
-
-        JLabel lblTotalRevenue = new JLabel("6,000,000 VND");
         kpiRow.add(UiComponents.statCard("Tổng doanh thu", lblTotalRevenue, UiTheme.SUCCESS));
-
-        JLabel lblTotalRefund = new JLabel("100,000 VND");
         kpiRow.add(UiComponents.statCard("Tổng hoàn trả", lblTotalRefund, UiTheme.DANGER));
-
-        JLabel lblNetRevenue = new JLabel("5,900,000 VND");
         kpiRow.add(UiComponents.statCard("Doanh thu ròng", lblNetRevenue, UiTheme.KETOAN));
-
-        JPanel topSection = new JPanel(new BorderLayout(0, 12));
-        topSection.setOpaque(false);
-        topSection.add(buildTopBar2(), BorderLayout.NORTH);
-        topSection.add(kpiRow, BorderLayout.CENTER);
-
-        // Replace the NORTH with a combined section
-        removeAll();
-        add(buildTopBar(), BorderLayout.NORTH);
 
         JPanel mainContent = new JPanel(new BorderLayout(0, 12));
         mainContent.setOpaque(false);
@@ -57,36 +51,63 @@ public class BaoCaoDoanhThuPanel extends JPanel {
         UiComponents.setColumnAlignments(table,
                 SwingConstants.CENTER, SwingConstants.CENTER, SwingConstants.RIGHT,
                 SwingConstants.CENTER, SwingConstants.RIGHT, SwingConstants.RIGHT);
-
         mainContent.add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         add(mainContent, BorderLayout.CENTER);
-
-        loadSampleData();
+        loadData();
     }
 
     private JPanel buildTopBar() {
         JPanel panel = new JPanel(new BorderLayout(12, 0));
         panel.setOpaque(false);
-
         JLabel title = new JLabel("Báo Cáo Tài Chính – Doanh Thu");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
-
-        JButton exportBtn = UiComponents.ghostButton("Xuất file");
-        exportBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, "Chức năng xuất file — đang phát triển."));
-
-        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         right.setOpaque(false);
-        right.add(exportBtn);
-
+        JButton refreshBtn = UiComponents.ghostButton("Làm mới");
+        refreshBtn.addActionListener(e -> loadData());
+        right.add(refreshBtn);
+        right.add(UiComponents.ghostButton("Xuất file"));
         panel.add(title, BorderLayout.WEST);
         panel.add(right, BorderLayout.EAST);
         return panel;
     }
 
-    private JPanel buildTopBar2() { return new JPanel(); }
+    private void loadData() {
+        List<HoaDonHocPhi> hoaDonList = hoaDonController.getListHoaDon();
+        List<HoanTra> hoanTraList = hoanTraController.getListHoanTra();
 
-    private void loadSampleData() {
-        tableModel.addRow(new Object[]{"05/2026", 4, "6,000,000", 1, "100,000", "5,900,000"});
+        double totalRevenue = hoaDonList.stream().mapToDouble(HoaDonHocPhi::getTongTien).sum();
+        double totalRefund = hoanTraList.stream()
+                .filter(ht -> "Chap thuan".equalsIgnoreCase(ht.getTrangThai())
+                        || "Chấp thuận".equalsIgnoreCase(ht.getTrangThai()))
+                .mapToDouble(HoanTra::getSoTien).sum();
+
+        lblTotalRevenue.setText(String.format("%,.0f VNĐ", totalRevenue));
+        lblTotalRefund.setText(String.format("%,.0f VNĐ", totalRefund));
+        lblNetRevenue.setText(String.format("%,.0f VNĐ", totalRevenue - totalRefund));
+
+        tableModel.setRowCount(0);
+        for (int month = 1; month <= 12; month++) {
+            final int m = month;
+            long soHDThu = hoaDonList.stream()
+                    .filter(hd -> hd.getNgayLap() != null && hd.getNgayLap().getMonthValue() == m).count();
+            double tongThu = hoaDonList.stream()
+                    .filter(hd -> hd.getNgayLap() != null && hd.getNgayLap().getMonthValue() == m)
+                    .mapToDouble(HoaDonHocPhi::getTongTien).sum();
+            long soHDHoan = hoanTraList.stream()
+                    .filter(ht -> ht.getNgayYeuCau() != null && ht.getNgayYeuCau().getMonthValue() == m).count();
+            double tongHoan = hoanTraList.stream()
+                    .filter(ht -> ht.getNgayYeuCau() != null && ht.getNgayYeuCau().getMonthValue() == m)
+                    .mapToDouble(HoanTra::getSoTien).sum();
+
+            if (soHDThu > 0 || soHDHoan > 0) {
+                tableModel.addRow(new Object[]{
+                        String.format("T%d", m), soHDThu, String.format("%,.0f", tongThu),
+                        soHDHoan, String.format("%,.0f", tongHoan),
+                        String.format("%,.0f", tongThu - tongHoan)
+                });
+            }
+        }
     }
 }

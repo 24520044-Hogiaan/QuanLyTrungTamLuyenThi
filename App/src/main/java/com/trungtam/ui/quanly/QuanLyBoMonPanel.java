@@ -1,5 +1,7 @@
 package com.trungtam.ui.quanly;
 
+import com.trungtam.controller.BoMonController;
+import com.trungtam.model.BoMon;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
@@ -10,11 +12,13 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.List;
 
 public class QuanLyBoMonPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
+    private final BoMonController boMonController = new BoMonController();
 
     private static final String[] COT = { "Mã Bộ Môn", "Tên Bộ Môn" };
 
@@ -37,17 +41,15 @@ public class QuanLyBoMonPanel extends JPanel {
 
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         add(buildBottomBar(), BorderLayout.SOUTH);
-        loadSampleData();
+        loadData();
     }
 
     private JPanel buildTopBar() {
         JPanel panel = new JPanel(new BorderLayout(12, 0));
         panel.setOpaque(false);
-
         JLabel title = new JLabel("Danh Sách Bộ Môn");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
-
         JTextField searchField = new JTextField(22);
         searchField.putClientProperty("JTextField.placeholderText", "Tìm kiếm...");
         searchField.setFont(UiTheme.BODY);
@@ -57,7 +59,6 @@ public class QuanLyBoMonPanel extends JPanel {
                 rowSorter.setRowFilter(kw.isEmpty() ? null : RowFilter.regexFilter("(?i)" + kw));
             }
         });
-
         panel.add(title, BorderLayout.WEST);
         panel.add(searchField, BorderLayout.EAST);
         return panel;
@@ -69,15 +70,17 @@ public class QuanLyBoMonPanel extends JPanel {
         bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
         bar.add(UiComponents.primaryButton("Sửa", UiTheme.PRIMARY));
         bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
-        bar.add(UiComponents.ghostButton("Làm mới"));
+        JButton refreshBtn = UiComponents.ghostButton("Làm mới");
+        refreshBtn.addActionListener(e -> loadData());
+        bar.add(refreshBtn);
         return bar;
     }
 
-    private void loadSampleData() {
-        tableModel.addRow(new Object[]{101, "Toán học"});
-        tableModel.addRow(new Object[]{102, "Ngữ văn"});
-        tableModel.addRow(new Object[]{103, "Tiếng Anh"});
-        tableModel.addRow(new Object[]{104, "Vật lý"});
-        tableModel.addRow(new Object[]{105, "Hóa học"});
+    private void loadData() {
+        tableModel.setRowCount(0);
+        List<BoMon> list = boMonController.getListBoMon();
+        for (BoMon bm : list) {
+            tableModel.addRow(new Object[]{ bm.getMaBoMon(), bm.getTenBoMon() });
+        }
     }
 }

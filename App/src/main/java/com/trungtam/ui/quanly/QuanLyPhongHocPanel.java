@@ -1,5 +1,7 @@
 package com.trungtam.ui.quanly;
 
+import com.trungtam.controller.PhongHocController;
+import com.trungtam.model.PhongHoc;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
@@ -10,11 +12,13 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.List;
 
 public class QuanLyPhongHocPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
+    private final PhongHocController phongHocController = new PhongHocController();
 
     private static final String[] COT = { "Mã Phòng", "Tên Phòng", "Sức Chứa", "Trạng Thái" };
 
@@ -39,7 +43,7 @@ public class QuanLyPhongHocPanel extends JPanel {
 
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         add(buildBottomBar(), BorderLayout.SOUTH);
-        loadSampleData();
+        loadData();
     }
 
     private JPanel buildTopBar() {
@@ -71,15 +75,20 @@ public class QuanLyPhongHocPanel extends JPanel {
         bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
         bar.add(UiComponents.primaryButton("Sửa", UiTheme.PRIMARY));
         bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
-        bar.add(UiComponents.ghostButton("Làm mới"));
+
+        JButton refreshBtn = UiComponents.ghostButton("Làm mới");
+        refreshBtn.addActionListener(e -> loadData());
+        bar.add(refreshBtn);
         return bar;
     }
 
-    private void loadSampleData() {
-        tableModel.addRow(new Object[]{201, "Phòng học 1", 30, "Sẵn sàng"});
-        tableModel.addRow(new Object[]{202, "Phòng học 2", 40, "Đang dùng"});
-        tableModel.addRow(new Object[]{203, "Phòng học 3", 50, "Sẵn sàng"});
-        tableModel.addRow(new Object[]{204, "Phòng học 4", 25, "Sẵn sàng"});
-        tableModel.addRow(new Object[]{205, "Phòng học 5", 35, "Bảo trì"});
+    private void loadData() {
+        tableModel.setRowCount(0);
+        List<PhongHoc> list = phongHocController.getListPhongHoc();
+        for (PhongHoc ph : list) {
+            tableModel.addRow(new Object[]{
+                    ph.getMaPhongHoc(), ph.getTenPhong(), ph.getSucChua(), ph.getTrangThai()
+            });
+        }
     }
 }

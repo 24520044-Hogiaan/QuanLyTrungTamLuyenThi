@@ -9,7 +9,7 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 /**
- * Cổng học viên — sidebar xanh lá, content area dùng CardLayout.
+ * Cổng học viên
  */
 public class HocVienWindow extends JFrame {
 

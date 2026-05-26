@@ -8,7 +8,7 @@ import javax.swing.border.*;
 import java.awt.*;
 
 /**
- * Hồ sơ cá nhân học viên — form tự điền/cập nhật thông tin bản thân.
+ * Hồ sơ cá nhân học viên
  */
 public class HoSoCaNhanPanel extends JPanel {
 

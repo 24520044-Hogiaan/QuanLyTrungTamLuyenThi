@@ -1,5 +1,7 @@
 package com.trungtam.ui.quanly;
 
+import com.trungtam.controller.KhoaHocController;
+import com.trungtam.model.KhoaHoc;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
@@ -10,23 +12,23 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.List;
 
 public class QuanLyKhoaHocPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
+    private final KhoaHocController khoaHocController = new KhoaHocController();
 
     private static final String[] COT = {
-            "Mã KH", "Tên Khóa Học", "Mô Tả", "Hình Thức Học Phí", "Học Phí", "Mã Bộ Môn", "Cấp Độ"
+            "Mã KH", "Tên Khóa Học", "Mô Tả", "Học Phí/Tháng", "Học Phí Toàn Khóa", "Mã BM", "Cấp Độ"
     };
 
     public QuanLyKhoaHocPanel() {
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
-
         add(buildTopBar(), BorderLayout.NORTH);
-
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -35,25 +37,17 @@ public class QuanLyKhoaHocPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
-
-        int[] widths = {60, 200, 250, 120, 120, 80, 100};
-        for (int i = 0; i < widths.length; i++) {
-            table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
-        }
-
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         add(buildBottomBar(), BorderLayout.SOUTH);
-        loadSampleData();
+        loadData();
     }
 
     private JPanel buildTopBar() {
         JPanel panel = new JPanel(new BorderLayout(12, 0));
         panel.setOpaque(false);
-
         JLabel title = new JLabel("Danh Sách Khóa Học");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
-
         JTextField searchField = new JTextField(22);
         searchField.putClientProperty("JTextField.placeholderText", "Tìm kiếm...");
         searchField.setFont(UiTheme.BODY);
@@ -63,7 +57,6 @@ public class QuanLyKhoaHocPanel extends JPanel {
                 rowSorter.setRowFilter(kw.isEmpty() ? null : RowFilter.regexFilter("(?i)" + kw));
             }
         });
-
         panel.add(title, BorderLayout.WEST);
         panel.add(searchField, BorderLayout.EAST);
         return panel;
@@ -75,15 +68,22 @@ public class QuanLyKhoaHocPanel extends JPanel {
         bar.add(UiComponents.primaryButton("Thêm", UiTheme.SUCCESS));
         bar.add(UiComponents.primaryButton("Sửa", UiTheme.PRIMARY));
         bar.add(UiComponents.primaryButton("Xóa", UiTheme.DANGER));
-        bar.add(UiComponents.ghostButton("Làm Mới"));
+        JButton refreshBtn = UiComponents.ghostButton("Làm Mới");
+        refreshBtn.addActionListener(e -> loadData());
+        bar.add(refreshBtn);
         return bar;
     }
 
-    private void loadSampleData() {
-        tableModel.addRow(new Object[]{1, "Ôn thi Toán THPT QG", "Luyện giải đề Toán cấp 3", "Đóng theo tháng", "500,000 VNĐ", 101, "Cơ bản"});
-        tableModel.addRow(new Object[]{2, "Ôn thi Ngữ Văn THPT QG", "Luyện viết văn và đọc hiểu", "Đóng theo tháng", "600,000 VNĐ", 102, "Cơ bản"});
-        tableModel.addRow(new Object[]{3, "Ôn thi Tiếng Anh THPT QG", "Luyện ngữ pháp và từ vựng", "Đóng theo tháng", "700,000 VNĐ", 103, "Nâng cao"});
-        tableModel.addRow(new Object[]{4, "Ôn thi Vật Lý THPT QG", "Luyện giải đề Vật lý chuyên sâu", "Đóng theo tháng", "800,000 VNĐ", 104, "Nâng cao"});
-        tableModel.addRow(new Object[]{5, "Ôn thi Hóa Học THPT QG 1", "Luyện giải đề Hóa học cấp 3", "Đóng theo tháng", "1,000,000 VNĐ", 105, "Nâng cao"});
+    private void loadData() {
+        tableModel.setRowCount(0);
+        List<KhoaHoc> list = khoaHocController.layDanhSach();
+        for (KhoaHoc kh : list) {
+            tableModel.addRow(new Object[]{
+                    kh.getMaKhoaHoc(), kh.getTenKhoaHoc(), kh.getMoTa(),
+                    String.format("%,.0f", kh.getHocPhiThang()),
+                    String.format("%,.0f", kh.getHocPhiToanKhoa()),
+                    kh.getMaBoMon(), kh.getCapDo()
+            });
+        }
     }
 }
