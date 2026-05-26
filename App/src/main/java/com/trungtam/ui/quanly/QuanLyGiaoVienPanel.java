@@ -1,6 +1,8 @@
 package com.trungtam.ui.quanly;
 
+import com.trungtam.controller.BoMonController;
 import com.trungtam.controller.GiaoVienController;
+import com.trungtam.model.BoMon;
 import com.trungtam.model.GiaoVien;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
@@ -12,23 +14,28 @@ import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class QuanLyGiaoVienPanel extends JPanel {
 
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
     private final GiaoVienController giaoVienController = new GiaoVienController();
+    private final BoMonController boMonController = new BoMonController();
     private JTable table;
+    private Map<String, String> boMonMap = new HashMap<>();
 
     private static final String[] COT = {
-            "Mã GV", "Mã Nhân Viên", "Họ Tên", "Bằng Cấp", "Trạng Thái"
+            "Mã GV", "Mã Nhân Viên", "Chuyên Môn", "Bằng Cấp", "Trạng Thái"
     };
 
     public QuanLyGiaoVienPanel() {
         setLayout(new BorderLayout(0, 12));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
+        loadBoMonMap();
         add(buildTopBar(), BorderLayout.NORTH);
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -44,6 +51,20 @@ public class QuanLyGiaoVienPanel extends JPanel {
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         add(buildBottomBar(), BorderLayout.SOUTH);
         loadData();
+    }
+
+    private void loadBoMonMap() {
+        boMonMap.clear();
+        List<BoMon> list = boMonController.getListBoMon();
+        for (BoMon bm : list) {
+            boMonMap.put(String.valueOf(bm.getMaBoMon()), bm.getTenBoMon());
+        }
+    }
+
+    private String getChuyenMon(String maBoMon) {
+        if (maBoMon == null) return "";
+        String ten = boMonMap.get(maBoMon);
+        return ten != null ? ten : maBoMon;
     }
 
     private JPanel buildTopBar() {
@@ -82,11 +103,24 @@ public class QuanLyGiaoVienPanel extends JPanel {
         JButton refreshBtn = UiComponents.ghostButton("Làm Mới");
         refreshBtn.addActionListener(e -> loadData());
 
+        JButton btnPhanCong = UiComponents.primaryButton("Phân Công", new Color(0x37474F));
+        btnPhanCong.addActionListener(e -> phanCongGiaoVien());
+
         bar.add(btnThem);
         bar.add(btnSua);
         bar.add(btnXoa);
         bar.add(refreshBtn);
+        bar.add(btnPhanCong);
         return bar;
+    }
+
+    private void phanCongGiaoVien() {
+        int row = table.getSelectedRow();
+        if (row < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn giáo viên cần phân công!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        JOptionPane.showMessageDialog(this, "Chức năng phân công giáo viên đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
     }
 
     private void themGiaoVien() {
@@ -171,10 +205,10 @@ public class QuanLyGiaoVienPanel extends JPanel {
         }
         int modelRow = table.convertRowIndexToModel(row);
         int maGV = (int) tableModel.getValueAt(modelRow, 0);
-        String hoTen = (String) tableModel.getValueAt(modelRow, 2);
+        String chuyenMon = (String) tableModel.getValueAt(modelRow, 2);
 
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Bạn có chắc muốn xóa giáo viên \"" + hoTen + "\" (Mã: " + maGV + ")?",
+                "Bạn có chắc muốn xóa giáo viên \"" + chuyenMon + "\" (Mã: " + maGV + ")?",
                 "Xác nhận xóa", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
             if (giaoVienController.xoaGiaoVien(maGV)) {
@@ -188,10 +222,12 @@ public class QuanLyGiaoVienPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
+        loadBoMonMap();
         List<GiaoVien> list = giaoVienController.layDanhSach();
         for (GiaoVien gv : list) {
             tableModel.addRow(new Object[]{
-                    gv.getMaGiaoVien(), gv.getMaNhanVien(), gv.getHoTen(),
+                    gv.getMaGiaoVien(), gv.getMaNhanVien(),
+                    getChuyenMon(gv.getMaBoMon()),
                     gv.getBangCap(), gv.getTrangThai()
             });
         }

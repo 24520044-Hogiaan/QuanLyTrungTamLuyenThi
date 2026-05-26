@@ -21,7 +21,7 @@ public class QuanLyKhoaHocPanel extends JPanel {
     private final KhoaHocController khoaHocController = new KhoaHocController();
 
     private static final String[] COT = {
-            "Mã KH", "Tên Khóa Học", "Mô Tả", "Học Phí/Tháng", "Học Phí Toàn Khóa", "Mã BM", "Cấp Độ"
+            "Mã KH", "Tên Khóa Học", "Mô Tả", "Hình thức học phí", "Học Phí", "Mã Bộ Môn", "Cấp Độ"
     };
 
     public QuanLyKhoaHocPanel() {
@@ -37,6 +37,10 @@ public class QuanLyKhoaHocPanel extends JPanel {
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
+        UiComponents.setColumnAlignments(table,
+                SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.LEFT,
+                SwingConstants.CENTER, SwingConstants.RIGHT, SwingConstants.CENTER,
+                SwingConstants.CENTER);
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         add(buildBottomBar(), BorderLayout.SOUTH);
         loadData();
@@ -89,10 +93,16 @@ public class QuanLyKhoaHocPanel extends JPanel {
         tableModel.setRowCount(0);
         List<KhoaHoc> list = khoaHocController.layDanhSach();
         for (KhoaHoc kh : list) {
+            String hinhThuc = "Đóng theo tháng";
+            double hocPhi = kh.getHocPhiThang();
+            if (kh.getHocPhiThang() <= 0 && kh.getHocPhiToanKhoa() > 0) {
+                hinhThuc = "Toàn khóa";
+                hocPhi = kh.getHocPhiToanKhoa();
+            }
             tableModel.addRow(new Object[]{
                     kh.getMaKhoaHoc(), kh.getTenKhoaHoc(), kh.getMoTa(),
-                    String.format("%,.0f", kh.getHocPhiThang()),
-                    String.format("%,.0f", kh.getHocPhiToanKhoa()),
+                    hinhThuc,
+                    String.format("%,.0f VNĐ", hocPhi),
                     kh.getMaBoMon(), kh.getCapDo()
             });
         }

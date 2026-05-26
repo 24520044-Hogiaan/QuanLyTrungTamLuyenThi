@@ -46,9 +46,27 @@ public class DuyetChuyenLopPanel extends JPanel {
     private JPanel buildTopBar() {
         JPanel panel = new JPanel(new BorderLayout(12, 0));
         panel.setOpaque(false);
+
         JLabel title = new JLabel("Yêu Cầu Chuyển Lớp");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
+
+        JPanel rightPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        rightPanel.setOpaque(false);
+
+        JLabel lblTrangThai = new JLabel("Trạng thái:");
+        lblTrangThai.setFont(UiTheme.BODY);
+        JComboBox<String> cboTrangThai = new JComboBox<>(new String[]{"Tất cả", "Cho duyet", "Chap thuan", "Tu choi"});
+        cboTrangThai.setFont(UiTheme.BODY);
+        cboTrangThai.addActionListener(e -> {
+            String selected = (String) cboTrangThai.getSelectedItem();
+            if ("Tất cả".equals(selected)) {
+                rowSorter.setRowFilter(null);
+            } else {
+                rowSorter.setRowFilter(RowFilter.regexFilter("(?i)" + selected, 6));
+            }
+        });
+
         JTextField searchField = new JTextField(18);
         searchField.putClientProperty("JTextField.placeholderText", "Tìm kiếm...");
         searchField.setFont(UiTheme.BODY);
@@ -58,8 +76,13 @@ public class DuyetChuyenLopPanel extends JPanel {
                 rowSorter.setRowFilter(kw.isEmpty() ? null : RowFilter.regexFilter("(?i)" + kw));
             }
         });
+
+        rightPanel.add(lblTrangThai);
+        rightPanel.add(cboTrangThai);
+        rightPanel.add(searchField);
+
         panel.add(title, BorderLayout.WEST);
-        panel.add(searchField, BorderLayout.EAST);
+        panel.add(rightPanel, BorderLayout.EAST);
         return panel;
     }
 
