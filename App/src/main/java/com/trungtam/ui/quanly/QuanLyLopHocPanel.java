@@ -155,8 +155,12 @@ public class QuanLyLopHocPanel extends JPanel {
 
         cardContainer = new JPanel(new GridLayout(0, 3, 16, 16));
         cardContainer.setOpaque(false);
+        
+        JPanel cardWrapper = new JPanel(new BorderLayout());
+        cardWrapper.setOpaque(false);
+        cardWrapper.add(cardContainer, BorderLayout.NORTH);
 
-        JScrollPane scrollPane = new JScrollPane(cardContainer,
+        JScrollPane scrollPane = new JScrollPane(cardWrapper,
                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
         scrollPane.getVerticalScrollBar().setUnitIncrement(20);
