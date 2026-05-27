@@ -134,9 +134,9 @@ VALUES (3, N'Tiếng Anh Giao Tiếp Cấp 3', N'Khóa học nâng cao kỹ năn
 -- 9. LOPHOC (SISO đặt bằng 3 và 1 khớp chần chặn với số lượng bản ghi bảng DANGKY)
 -- =========================================================
 INSERT INTO LOPHOC (MALOPHOC, TENLOP, NGAYBD, NGAYKT, MAKHOAHOC, MAGIAOVIEN, SISO, TANSUAT, TRANGTHAI)
-VALUES (1, N'Lớp Toán 10A1', TO_DATE('2026-06-01', 'YYYY-MM-DD'), TO_DATE('2026-09-01', 'YYYY-MM-DD'), 1, 1, 3, N'3 buổi/tuần', 'Dang mo');
+VALUES (1, N'Lớp Toán 10A1', TO_DATE('2026-06-01', 'YYYY-MM-DD'), TO_DATE('2026-09-01', 'YYYY-MM-DD'), 1, 1, 10, N'3 buổi/tuần', 'Dang mo');
 INSERT INTO LOPHOC (MALOPHOC, TENLOP, NGAYBD, NGAYKT, MAKHOAHOC, MAGIAOVIEN, SISO, TANSUAT, TRANGTHAI)
-VALUES (2, N'Lớp Văn 11B1', TO_DATE('2026-06-01', 'YYYY-MM-DD'), TO_DATE('2026-09-01', 'YYYY-MM-DD'), 2, 2, 1, N'2 buổi/tuần', 'Dang mo');
+VALUES (2, N'Lớp Văn 11B1', TO_DATE('2026-06-01', 'YYYY-MM-DD'), TO_DATE('2026-09-01', 'YYYY-MM-DD'), 2, 2, 20, N'2 buổi/tuần', 'Dang mo');
 
 -- =========================================================
 -- 10. LICHHOC
