@@ -1,6 +1,5 @@
 package com.trungtam.ui.admin;
 
-import com.trungtam.controller.VaiTroController;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 import com.trungtam.util.DatabaseConnection;
@@ -19,7 +18,6 @@ public class QuanLyTaiKhoanPanel extends JPanel {
     private final DefaultTableModel tableModel;
     private final JTable table;
     private final TableRowSorter<DefaultTableModel> rowSorter;
-    private final VaiTroController vaiTroController = new VaiTroController();
 
     private static final String[] COT = {
             "Mã TK", "Tên Tài Khoản", "Vai Trò", "Trạng Thái", "Ngày Tạo", "Đăng Nhập Cuối"
@@ -104,15 +102,17 @@ public class QuanLyTaiKhoanPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        String sql = "SELECT MATAIKHOAN, TENTAIKHOAN, MAVAITRO, TRANGTHAITK, NGAYTAO, LANDN_CUOI FROM TAIKHOAN";
+        String sql = "SELECT tk.MATAIKHOAN, tk.TENTAIKHOAN, vt.TENVAITRO, tk.TRANGTHAITK, tk.NGAYTAO, tk.LANDN_CUOI " +
+                     "FROM TAIKHOAN tk " +
+                     "LEFT JOIN VAITRO vt ON tk.MAVAITRO = vt.MAVAITRO";
         try (Connection con = DatabaseConnection.getConnection();
                 Statement st = con.createStatement();
                 ResultSet rs = st.executeQuery(sql)) {
             while (rs.next()) {
-                int maVaiTro = rs.getInt("MAVAITRO");
-                String tenVaiTro = vaiTroController.getTenVaiTro(maVaiTro);
-                if (tenVaiTro == null)
-                    tenVaiTro = String.valueOf(maVaiTro);
+                String tenVaiTro = rs.getString("TENVAITRO");
+                if (tenVaiTro == null) {
+                    tenVaiTro = "Không xác định";
+                }
                 Timestamp ngayTao = rs.getTimestamp("NGAYTAO");
                 Timestamp lanDN = rs.getTimestamp("LANDN_CUOI");
                 tableModel.addRow(new Object[] {

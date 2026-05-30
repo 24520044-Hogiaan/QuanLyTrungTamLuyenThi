@@ -261,9 +261,10 @@ public class ThongKePanel extends JPanel {
                     g2.drawString(labels[i], x - lblW / 2, h - 30);
                 }
 
-                String xAxisLabel = "Tháng";
-                g2.drawString(xAxisLabel, (w - g2.getFontMetrics().stringWidth(xAxisLabel)) / 2, h - 10);
-
+                int legendW = g2.getFontMetrics().stringWidth(seriesName);
+                int totalLegendW = 8 + 6 + legendW; 
+                int startX = (w - totalLegendW) / 2;
+                
                 g2.setColor(lineColor);
                 g2.setStroke(new BasicStroke(2));
                 for (int i = 0; i < labels.length - 1; i++) {
@@ -272,12 +273,12 @@ public class ThongKePanel extends JPanel {
                 for (int i = 0; i < labels.length; i++) {
                     g2.fillOval(xPoints[i] - 4, yPoints[i] - 4, 8, 8);
                 }
-
+                
                 g2.setFont(UiTheme.CAPTION);
                 g2.setColor(lineColor);
-                g2.fillOval(w / 2 - 40, h - 18, 8, 8);
+                g2.fillOval(startX, h - 18, 8, 8);
                 g2.setColor(UiTheme.TEXT_MUTED);
-                g2.drawString(seriesName, w / 2 - 28, h - 10);
+                g2.drawString(seriesName, startX + 14, h - 10);
 
                 g2.dispose();
             }

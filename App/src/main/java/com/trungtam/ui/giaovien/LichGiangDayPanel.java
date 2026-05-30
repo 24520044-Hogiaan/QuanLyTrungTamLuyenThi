@@ -2,6 +2,8 @@ package com.trungtam.ui.giaovien;
 
 import com.trungtam.controller.LopHocController;
 import com.trungtam.model.LopHoc;
+import com.trungtam.model.LichHoc;
+import com.trungtam.dao.LichHocDAO;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
@@ -68,17 +70,25 @@ public class LichGiangDayPanel extends JPanel {
             String tenLop = lop.getTenLop();
             if (!classNames.contains(tenLop)) classNames.add(tenLop);
 
-            String tanSuat = lop.getTanSuat() != null ? lop.getTanSuat() : "";
-            String ca = tanSuat.toLowerCase().contains("chieu") ? "Chiều" : "Sáng";
-
-            String[] parts = tanSuat.split("\\s+")[0].split("-");
-            for (String part : parts) {
-                try {
-                    int thu = Integer.parseInt(part.trim());
-                    if (thu >= 2 && thu <= 7) {
-                        lichEntries.add(new LichEntry(thu, ca, tenLop));
+            LichHocDAO lhDao = new LichHocDAO();
+            try {
+                List<LichHoc> dsLich = lhDao.findByLop(lop.getMaLopHoc());
+                for (LichHoc lh : dsLich) {
+                    if (lh.getThu() == null) continue;
+                    String thuStr = lh.getThu().replaceAll("[^0-9]", "");
+                    if (!thuStr.isEmpty()) {
+                        int thu = Integer.parseInt(thuStr);
+                        if (thu >= 2 && thu <= 7) {
+                            String ca = "Sáng";
+                            if (lh.getGioBatDau() != null && lh.getGioBatDau().compareTo("12:00") >= 0) {
+                                ca = "Chiều";
+                            }
+                            lichEntries.add(new LichEntry(thu, ca, tenLop));
+                        }
                     }
-                } catch (NumberFormatException ignored) {}
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

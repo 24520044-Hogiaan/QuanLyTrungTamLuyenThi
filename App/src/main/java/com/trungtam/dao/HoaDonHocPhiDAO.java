@@ -58,4 +58,15 @@ public class HoaDonHocPhiDAO {
         hd.setGhiChu(rs.getString("GHICHU"));
         return hd;
     }
+
+    public void processPayment(int maHoaDon, String paymentMethod, int staffId) throws SQLException {
+        String sql = "{ CALL SP_PROCESS_PAYMENT(?, ?, ?) }";
+        try (Connection con = DatabaseConnection.getConnection();
+             java.sql.CallableStatement cs = con.prepareCall(sql)) {
+            cs.setInt(1, maHoaDon);
+            cs.setString(2, paymentMethod);
+            cs.setInt(3, staffId);
+            cs.execute();
+        }
+    }
 }

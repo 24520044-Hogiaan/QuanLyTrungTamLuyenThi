@@ -18,4 +18,19 @@ public class LopHocController {
             return Collections.emptyList();
         }
     }
+
+    public boolean themLopHoc(LopHoc lh) {
+        try { return lopHocDAO.addLopHoc(lh); }
+        catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+
+    public boolean capNhatLopHoc(LopHoc lh) {
+        try { return lopHocDAO.updateLopHoc(lh); }
+        catch (SQLException e) { e.printStackTrace(); return false; }
+    }
+
+    public boolean xoaLopHoc(int maLopHoc) {
+        try { return lopHocDAO.deleteLopHoc(maLopHoc); }
+        catch (SQLException e) { e.printStackTrace(); return false; }
+    }
 }

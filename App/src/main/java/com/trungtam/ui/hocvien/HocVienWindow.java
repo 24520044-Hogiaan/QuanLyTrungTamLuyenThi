@@ -46,8 +46,7 @@ public class HocVienWindow extends JFrame {
                 "Xem Điểm",
                 "Bảng Xếp Hạng",
                 "Tài Liệu",
-                "Thanh Toán",
-                "Đánh Giá"
+                "Thanh Toán"
         };
         for (String t : titles) {
             sidebar.addItem(t);
@@ -61,8 +60,7 @@ public class HocVienWindow extends JFrame {
                 new XemDiemHVPanel(maHocVien),
                 new BangXepHangPanel(maHocVien),
                 new TaiLieuPanel(maHocVien),
-                new ThanhToanHocPhiPanel(maHocVien),
-                new DanhGiaPanel(maHocVien)
+                new ThanhToanHocPhiPanel(maHocVien)
         };
 
         CardLayout cards = new CardLayout();

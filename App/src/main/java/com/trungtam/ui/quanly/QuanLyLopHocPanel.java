@@ -7,6 +7,10 @@ import com.trungtam.controller.LopHocController;
 import com.trungtam.model.GiaoVien;
 import com.trungtam.model.KhoaHoc;
 import com.trungtam.model.LopHoc;
+import com.trungtam.model.LichHoc;
+import com.trungtam.model.HocVien;
+import com.trungtam.dao.LichHocDAO;
+import com.trungtam.controller.HocVienController;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
@@ -19,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+// Trigger IDE rebuild
 public class QuanLyLopHocPanel extends JPanel {
 
     private final LopHocController lopHocController = new LopHocController();
@@ -102,8 +107,18 @@ public class QuanLyLopHocPanel extends JPanel {
         title.setForeground(UiTheme.QUANLY);
 
         JButton btnThemLop = UiComponents.ghostButton("Thêm lớp học");
-        btnThemLop.addActionListener(e ->
-                JOptionPane.showMessageDialog(this, "Chức năng thêm lớp học đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+        btnThemLop.addActionListener(e -> {
+            LopHocDialog dialog = new LopHocDialog(SwingUtilities.getWindowAncestor(this), null, khoaHocController.layDanhSach(), giaoVienController.layDanhSach());
+            dialog.setVisible(true);
+            if (dialog.isSaved()) {
+                if (lopHocController.themLopHoc(dialog.getLopHoc())) {
+                    JOptionPane.showMessageDialog(this, "Thêm lớp học thành công!");
+                    loadData();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Thêm lớp học thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
 
         topBar.add(title, BorderLayout.WEST);
         topBar.add(btnThemLop, BorderLayout.EAST);
@@ -283,12 +298,30 @@ public class QuanLyLopHocPanel extends JPanel {
         btnChiTiet.addActionListener(e -> showDetail(lh));
 
         JButton btnSua = buildOutlineButton("Sửa", UiTheme.WARNING);
-        btnSua.addActionListener(e ->
-                JOptionPane.showMessageDialog(this, "Chức năng sửa lớp học đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+        btnSua.addActionListener(e -> {
+            LopHocDialog dialog = new LopHocDialog(SwingUtilities.getWindowAncestor(this), lh, khoaHocController.layDanhSach(), giaoVienController.layDanhSach());
+            dialog.setVisible(true);
+            if (dialog.isSaved()) {
+                if (lopHocController.capNhatLopHoc(dialog.getLopHoc())) {
+                    JOptionPane.showMessageDialog(this, "Cập nhật lớp học thành công!");
+                    loadData();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Cập nhật lớp học thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
 
         JButton btnXoa = buildOutlineButton("Xóa", UiTheme.DANGER);
-        btnXoa.addActionListener(e ->
-                JOptionPane.showMessageDialog(this, "Chức năng xóa lớp học đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE));
+        btnXoa.addActionListener(e -> {
+            if (JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa lớp học này?", "Xác nhận xóa", JOptionPane.YES_NO_OPTION) == JOptionPane.YES_OPTION) {
+                if (lopHocController.xoaLopHoc(lh.getMaLopHoc())) {
+                    JOptionPane.showMessageDialog(this, "Xóa lớp học thành công!");
+                    loadData();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Xóa lớp học thất bại! (Có thể do có học viên đã đăng ký)", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
 
         footer.add(badgeCapDo);
         footer.add(Box.createHorizontalStrut(16));
@@ -367,12 +400,11 @@ public class QuanLyLopHocPanel extends JPanel {
         detailContent.setOpaque(false);
 
         detailContent.add(buildThongTinChungPanel(lh), "TTC");
-        detailContent.add(buildHocVienTabPlaceholder(), "HV");
-        detailContent.add(buildPlaceholderTab("Lịch Học"), "LH");
-        detailContent.add(buildPlaceholderTab("Kiểm Tra"), "KT");
+        detailContent.add(buildHocVienTab(lh), "HV");
+        detailContent.add(buildLichHocTab(lh, detailContent), "LH");
 
-        String[] tabNames = {"Thông Tin Chung", "Học Viên", "Lịch Học", "Kiểm Tra"};
-        String[] tabKeys = {"TTC", "HV", "LH", "KT"};
+        String[] tabNames = {"Thông Tin Chung", "Học Viên", "Lịch Học"};
+        String[] tabKeys = {"TTC", "HV", "LH"};
         JButton[] navButtons = new JButton[tabNames.length];
 
         for (int i = 0; i < tabNames.length; i++) {
@@ -456,18 +488,27 @@ public class QuanLyLopHocPanel extends JPanel {
         lblTitle.setForeground(accentColor);
         lblTitle.setBorder(new EmptyBorder(0, 0, 12, 0));
 
-        JPanel rows = new JPanel(new GridLayout(labels.length, 2, 8, 20));
+        JPanel rows = new JPanel();
+        rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
         rows.setOpaque(false);
         for (int i = 0; i < labels.length; i++) {
+            JPanel row = new JPanel(new BorderLayout());
+            row.setOpaque(false);
+            row.setBorder(new EmptyBorder(0, 0, 16, 0));
+            
             JLabel lbl = new JLabel(labels[i]);
             lbl.setFont(UiTheme.BODY_B);
             lbl.setForeground(UiTheme.TEXT_PRIMARY);
+            lbl.setPreferredSize(new Dimension(120, 20));
+            
             JLabel val = new JLabel(values[i]);
             val.setFont(UiTheme.BODY);
             val.setForeground(UiTheme.TEXT_SECONDARY);
-            val.setHorizontalAlignment(SwingConstants.RIGHT);
-            rows.add(lbl);
-            rows.add(val);
+            val.setHorizontalAlignment(SwingConstants.LEFT);
+            
+            row.add(lbl, BorderLayout.WEST);
+            row.add(val, BorderLayout.CENTER);
+            rows.add(row);
         }
 
         card.add(lblTitle, BorderLayout.NORTH);
@@ -475,27 +516,199 @@ public class QuanLyLopHocPanel extends JPanel {
         return card;
     }
 
-    private JPanel buildHocVienTabPlaceholder() {
-        JPanel panel = new JPanel(new BorderLayout());
+    private JPanel buildHocVienTab(LopHoc lh) {
+        JPanel panel = new JPanel(new BorderLayout(0, 16));
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        JLabel lbl = new JLabel("Danh sách học viên đăng ký lớp");
-        lbl.setFont(UiTheme.BODY);
-        lbl.setForeground(UiTheme.TEXT_MUTED);
-        panel.add(lbl, BorderLayout.NORTH);
+        JLabel title = new JLabel("Danh Sách Học Viên Lớp " + lh.getTenLop());
+        title.setFont(UiTheme.TITLE_S);
+        title.setForeground(UiTheme.PRIMARY);
+        panel.add(title, BorderLayout.NORTH);
+
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setOpaque(false);
+
+        HocVienController hvController = new HocVienController();
+        List<HocVien> students = hvController.layDanhSachTheoLop(lh.getMaLopHoc());
+        
+        if (students.isEmpty()) {
+            JLabel empty = new JLabel("Chưa có học viên nào đăng ký lớp này.");
+            empty.setFont(UiTheme.BODY);
+            empty.setForeground(UiTheme.TEXT_MUTED);
+            listPanel.add(empty);
+        } else {
+            for (HocVien hv : students) {
+                JPanel row = new JPanel(new BorderLayout(16, 0));
+                row.setBackground(UiTheme.CARD_BG);
+                row.setBorder(BorderFactory.createCompoundBorder(
+                        BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
+                        new EmptyBorder(12, 16, 12, 16)
+                ));
+                row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+                
+                JLabel lblTen = new JLabel(hv.getHoTen());
+                lblTen.setFont(UiTheme.BODY_B);
+                lblTen.setForeground(UiTheme.TEXT_PRIMARY);
+                
+                JLabel lblSdt = new JLabel("SĐT: " + (hv.getSoDienThoai() != null ? hv.getSoDienThoai() : "Chưa cập nhật"));
+                lblSdt.setFont(UiTheme.BODY);
+                lblSdt.setForeground(UiTheme.TEXT_SECONDARY);
+                
+                row.add(lblTen, BorderLayout.WEST);
+                row.add(lblSdt, BorderLayout.EAST);
+                
+                listPanel.add(row);
+                listPanel.add(Box.createVerticalStrut(8));
+            }
+        }
+
+        JScrollPane scroll = new JScrollPane(listPanel, 
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        panel.add(scroll, BorderLayout.CENTER);
+
         return panel;
     }
 
-    private JPanel buildPlaceholderTab(String name) {
-        JPanel panel = new JPanel(new BorderLayout());
+
+
+    private JPanel buildLichHocTab(LopHoc lh, JPanel detailContent) {
+        JPanel panel = new JPanel(new BorderLayout(0, 16));
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        JLabel lbl = new JLabel("Chức năng " + name + " đang phát triển.");
-        lbl.setFont(UiTheme.BODY);
-        lbl.setForeground(UiTheme.TEXT_MUTED);
-        panel.add(lbl, BorderLayout.CENTER);
+        JPanel headerPanel = new JPanel(new BorderLayout());
+        headerPanel.setOpaque(false);
+
+        JLabel title = new JLabel("Lịch Học Trong Tuần");
+        title.setFont(UiTheme.TITLE_S);
+        title.setForeground(UiTheme.PRIMARY);
+        
+        JButton btnAdd = UiComponents.primaryButton("Thêm", UiTheme.PRIMARY);
+        btnAdd.setFont(UiTheme.CAPTION);
+        btnAdd.setPreferredSize(new Dimension(70, 28));
+        btnAdd.addActionListener(e -> {
+            JPanel inputPanel = new JPanel(new GridLayout(3, 2, 8, 8));
+            JComboBox<String> cboThu = new JComboBox<>(new String[]{"Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"});
+            JTextField txtBatDau = new JTextField("07:00");
+            JTextField txtKetThuc = new JTextField("09:00");
+            
+            inputPanel.add(new JLabel("Thứ:")); inputPanel.add(cboThu);
+            inputPanel.add(new JLabel("Giờ Bắt Đầu:")); inputPanel.add(txtBatDau);
+            inputPanel.add(new JLabel("Giờ Kết Thúc:")); inputPanel.add(txtKetThuc);
+            
+            int result = JOptionPane.showConfirmDialog(SwingUtilities.getWindowAncestor(this), inputPanel, "Thêm Lịch Học", JOptionPane.OK_CANCEL_OPTION);
+            if (result == JOptionPane.OK_OPTION) {
+                LichHoc newLich = new LichHoc();
+                newLich.setMaLop(lh.getMaLopHoc());
+                newLich.setThu(cboThu.getSelectedItem().toString());
+                newLich.setGioBatDau(txtBatDau.getText().trim());
+                newLich.setGioKetThuc(txtKetThuc.getText().trim());
+                
+                LichHocDAO dao = new LichHocDAO();
+                try {
+                    if (dao.insert(newLich)) {
+                        detailContent.add(buildLichHocTab(lh, detailContent), "LH_NEW");
+                        ((CardLayout) detailContent.getLayout()).show(detailContent, "LH_NEW");
+                    }
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(this, "Thêm thất bại!");
+                }
+            }
+        });
+
+        headerPanel.add(title, BorderLayout.WEST);
+        headerPanel.add(btnAdd, BorderLayout.EAST);
+        panel.add(headerPanel, BorderLayout.NORTH);
+
+        JPanel listPanel = new JPanel();
+        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
+        listPanel.setOpaque(false);
+
+        LichHocDAO dao = new LichHocDAO();
+        try {
+            List<LichHoc> schedule = dao.findByLop(lh.getMaLopHoc());
+            if (schedule.isEmpty()) {
+                JLabel empty = new JLabel("Chưa có lịch học nào cho lớp này.");
+                empty.setFont(UiTheme.BODY);
+                empty.setForeground(UiTheme.TEXT_MUTED);
+                listPanel.add(empty);
+            } else {
+                for (LichHoc lich : schedule) {
+                    JPanel row = new JPanel(new BorderLayout(16, 0));
+                    row.setBackground(UiTheme.CARD_BG);
+                    row.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
+                            new EmptyBorder(12, 16, 12, 16)
+                    ));
+                    row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
+                    
+                    String thu = lich.getThu();
+                    if (thu != null && thu.startsWith("Thu")) thu = thu.replace("Thu", "Thứ");
+                    
+                    JLabel lblThu = new JLabel(thu);
+                    lblThu.setFont(UiTheme.BODY_B);
+                    lblThu.setForeground(UiTheme.TEXT_PRIMARY);
+                    
+                    String gioStr = "Chưa xếp giờ";
+                    if (lich.getGioBatDau() != null && lich.getGioKetThuc() != null) {
+                        gioStr = lich.getGioBatDau() + " - " + lich.getGioKetThuc();
+                    }
+                    
+                    JLabel lblGio = new JLabel(gioStr);
+                    lblGio.setFont(UiTheme.BODY);
+                    lblGio.setForeground(UiTheme.TEXT_SECONDARY);
+                    
+                    JButton btnDel = UiComponents.ghostButton("Xóa");
+                    btnDel.setFont(UiTheme.CAPTION);
+                    btnDel.setForeground(UiTheme.DANGER);
+                    btnDel.addActionListener(e -> {
+                        int conf = JOptionPane.showConfirmDialog(this, "Xóa lịch học này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+                        if (conf == JOptionPane.YES_OPTION) {
+                            try {
+                                if (dao.delete(lich.getMaLich())) {
+                                    detailContent.add(buildLichHocTab(lh, detailContent), "LH_NEW");
+                                    ((CardLayout) detailContent.getLayout()).show(detailContent, "LH_NEW");
+                                }
+                            } catch (Exception ex) {
+                                ex.printStackTrace();
+                            }
+                        }
+                    });
+                    
+                    JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+                    right.setOpaque(false);
+                    right.add(lblGio);
+                    right.add(btnDel);
+                    
+                    row.add(lblThu, BorderLayout.WEST);
+                    row.add(right, BorderLayout.EAST);
+                    
+                    listPanel.add(row);
+                    listPanel.add(Box.createVerticalStrut(8));
+                }
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JLabel err = new JLabel("Lỗi tải lịch học.");
+            err.setForeground(UiTheme.DANGER);
+            listPanel.add(err);
+        }
+
+        JScrollPane scroll = new JScrollPane(listPanel, 
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
+                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+        scroll.setBorder(null);
+        scroll.setOpaque(false);
+        scroll.getViewport().setOpaque(false);
+        panel.add(scroll, BorderLayout.CENTER);
+
         return panel;
     }
 }

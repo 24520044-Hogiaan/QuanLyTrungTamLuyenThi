@@ -19,6 +19,7 @@ public class ThuHocPhiPanel extends JPanel {
     private final DefaultTableModel tableModel;
     private final TableRowSorter<DefaultTableModel> rowSorter;
     private final HoaDonController hoaDonController = new HoaDonController();
+    private JTable table;
 
     private static final String[] COT = {
             "Mã HĐ", "Mã HV", "Mã Lớp", "Tổng Tiền", "Hình Thức TT", "Loại HĐ", "Trạng Thái"
@@ -32,7 +33,7 @@ public class ThuHocPhiPanel extends JPanel {
         tableModel = new DefaultTableModel(COT, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
-        JTable table = new JTable(tableModel);
+        table = new JTable(tableModel);
         UiComponents.styleTable(table);
         table.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         rowSorter = new TableRowSorter<>(tableModel);
@@ -59,7 +60,7 @@ public class ThuHocPhiPanel extends JPanel {
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttons.setOpaque(false);
         JButton collectBtn = UiComponents.primaryButton("Thu phí", UiTheme.KETOAN);
-        collectBtn.addActionListener(e -> JOptionPane.showMessageDialog(this, "Chức năng thu phí — đang phát triển."));
+        collectBtn.addActionListener(e -> handlePayment());
         buttons.add(collectBtn);
         JButton refreshBtn = UiComponents.ghostButton("Làm mới");
         refreshBtn.addActionListener(e -> loadData());
@@ -71,6 +72,48 @@ public class ThuHocPhiPanel extends JPanel {
         panel.add(title, BorderLayout.WEST);
         panel.add(rightPanel, BorderLayout.EAST);
         return panel;
+    }
+
+    private void handlePayment() {
+        int viewRow = table.getSelectedRow();
+        if (viewRow < 0) {
+            JOptionPane.showMessageDialog(this, "Vui lòng chọn hóa đơn cần thu phí.", "Chưa chọn", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelRow = table.convertRowIndexToModel(viewRow);
+        int maHoaDon = (int) tableModel.getValueAt(modelRow, 0);
+        String trangThai = (String) tableModel.getValueAt(modelRow, 6);
+
+        if (!"Cho thanh toan".equals(trangThai)) {
+            JOptionPane.showMessageDialog(this,
+                    "Chỉ thu phí được hóa đơn ở trạng thái 'Cho thanh toan'.\nTrạng thái hiện tại: " + trangThai,
+                    "Không hợp lệ", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        String[] paymentMethods = { "Tien mat", "Chuyen khoan truc tiep" };
+        String selectedMethod = (String) JOptionPane.showInputDialog(this,
+                "Chọn hình thức thanh toán:", "Thu Phí - Hóa đơn #" + maHoaDon,
+                JOptionPane.QUESTION_MESSAGE, null, paymentMethods, paymentMethods[0]);
+
+        if (selectedMethod == null) return;
+
+        try {
+            hoaDonController.processPayment(maHoaDon, selectedMethod, 3);
+            JOptionPane.showMessageDialog(this,
+                    "Thu phí thành công!\nHóa đơn #" + maHoaDon + " đã được ghi nhận thanh toán.",
+                    "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            loadData();
+        } catch (Exception ex) {
+            String errorMsg = ex.getMessage();
+            if (errorMsg != null && errorMsg.contains("ORA-")) {
+                errorMsg = errorMsg.substring(errorMsg.indexOf("ORA-"));
+            }
+            JOptionPane.showMessageDialog(this,
+                    "Lỗi khi thu phí: " + errorMsg,
+                    "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private void loadData() {

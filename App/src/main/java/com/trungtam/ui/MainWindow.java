@@ -24,7 +24,7 @@ public class MainWindow extends JFrame {
         sidebar.addSection("Chức năng chính");
         String[] titles = {
                 "Danh Sách GV", "Điểm Danh", "Nhập Điểm",
-                "Lịch Giảng Dạy", "Thống Kê Lớp", "Gửi Thông Báo"
+                "Lịch Giảng Dạy", "Thống Kê Lớp"
         };
         for (String t : titles) {
             sidebar.addItem(t);
@@ -32,7 +32,7 @@ public class MainWindow extends JFrame {
 
         JPanel[] panels = {
                 new GiaoVienPanel(), new DiemDanhPanel(), new NhapDiemPanel(),
-                new LichGiangDayPanel(), new ThongKeLopPanel(), new GuiThongBaoPanel()
+                new LichGiangDayPanel(), new ThongKeLopPanel()
         };
 
         CardLayout cards = new CardLayout();
@@ -70,7 +70,7 @@ public class MainWindow extends JFrame {
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.TEXT_PRIMARY);
 
-        JLabel subtitle = new JLabel("Điểm danh, quản lý lớp, nhập điểm và thông báo");
+        JLabel subtitle = new JLabel("Điểm danh, quản lý lớp và nhập điểm");
         subtitle.setFont(UiTheme.CAPTION);
         subtitle.setForeground(UiTheme.TEXT_MUTED);
 

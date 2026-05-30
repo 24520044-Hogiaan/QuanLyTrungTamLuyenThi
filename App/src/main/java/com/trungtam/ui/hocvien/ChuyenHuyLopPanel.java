@@ -6,12 +6,18 @@ import com.trungtam.controller.YeuCauChuyenLopController;
 import com.trungtam.model.DangKy;
 import com.trungtam.model.LopHoc;
 import com.trungtam.model.YeuCauChuyenLop;
+import com.trungtam.controller.HoanTraController;
+import com.trungtam.dao.HoaDonHocPhiDAO;
+import com.trungtam.model.HoaDonHocPhi;
+import com.trungtam.model.HoanTra;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import java.awt.*;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -243,9 +249,54 @@ public class ChuyenHuyLopPanel extends JPanel {
                     "Bạn chắc chắn muốn hủy lớp: " + cboLopHuy.getSelectedItem() + "?",
                     "Xác Nhận Hủy Lớp", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (confirm == JOptionPane.YES_OPTION) {
-                JOptionPane.showMessageDialog(panel,
-                        "Đã gửi yêu cầu hủy lớp. Hệ thống sẽ xử lý trong 24h.",
-                        "Thành Công", JOptionPane.INFORMATION_MESSAGE);
+                String tenLop = (String) cboLopHuy.getSelectedItem();
+                Integer maLop = tenLopToMa.get(tenLop);
+                if (maLop == null) return;
+                
+                LopHoc targetLop = null;
+                for (LopHoc lop : lopHocController.layDanhSach()) {
+                    if (lop.getMaLopHoc() == maLop) {
+                        targetLop = lop; break;
+                    }
+                }
+                
+                HoaDonHocPhi targetHD = null;
+                HoaDonHocPhiDAO hdDao = new HoaDonHocPhiDAO();
+                for (HoaDonHocPhi hd : hdDao.getHoaDonByHocVien(maHocVien)) {
+                    if (hd.getMaLop() == maLop && "Da thanh toan".equalsIgnoreCase(hd.getTrangThaiHD())) {
+                        targetHD = hd; break;
+                    }
+                }
+                
+                if (targetHD == null) {
+                    JOptionPane.showMessageDialog(panel, "Không tìm thấy hóa đơn đã thanh toán để hoàn tiền.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                    return;
+                }
+                
+                double refundPercent = 0;
+                if (targetLop != null && targetLop.getNgayBatDau() != null) {
+                    long diff = ChronoUnit.DAYS.between(targetLop.getNgayBatDau(), LocalDate.now());
+                    if (diff <= 7) refundPercent = 1.0;
+                    else if (diff <= 30) refundPercent = 0.5;
+                } else {
+                    refundPercent = 1.0; // If no start date, assume it hasn't started
+                }
+                
+                double refundAmount = targetHD.getTongTien() * refundPercent;
+                HoanTra ht = new HoanTra();
+                ht.setMaHoaDon(targetHD.getMaHoaDon());
+                ht.setMaHocVien(maHocVien);
+                ht.setSoTien(refundAmount);
+                ht.setLyDo(txtLyDo.getText().trim());
+                
+                HoanTraController htCtrl = new HoanTraController();
+                if (htCtrl.guiYeuCauHoanTra(ht)) {
+                    String msg = "Đã gửi yêu cầu hủy lớp.\nSố tiền dự kiến hoàn trả: " + String.format("%,.0f", refundAmount) + " VNĐ\nHệ thống sẽ xử lý trong 24h.";
+                    JOptionPane.showMessageDialog(panel, msg, "Thành Công", JOptionPane.INFORMATION_MESSAGE);
+                    txtLyDo.setText("");
+                } else {
+                    JOptionPane.showMessageDialog(panel, "Gửi yêu cầu thất bại.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
             }
         });
         panel.add(buildBtnBar(btn), BorderLayout.SOUTH);

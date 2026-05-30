@@ -10,4 +10,8 @@ public class HoaDonController {
 
     public List<HoaDonHocPhi> getListHoaDon() { return hoaDonDAO.getListHoaDon(); }
     public List<HoaDonHocPhi> getHoaDonByHocVien(int maHocVien) { return hoaDonDAO.getHoaDonByHocVien(maHocVien); }
+
+    public void processPayment(int maHoaDon, String paymentMethod, int staffId) throws java.sql.SQLException {
+        hoaDonDAO.processPayment(maHoaDon, paymentMethod, staffId);
+    }
 }

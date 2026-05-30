@@ -84,7 +84,7 @@ CREATE TABLE NHANVIEN (
 CREATE TABLE GIAOVIEN (
     MAGIAOVIEN  NUMBER,
     MANHANVIEN  NUMBER,
-    MABOMON     NVARCHAR2(200),
+    MABOMON     NUMBER,
     BANGCAP     NVARCHAR2(100),
     TRANGTHAI   NVARCHAR2(20),
     CONSTRAINT pk_giaovien PRIMARY KEY (MAGIAOVIEN),
@@ -451,14 +451,6 @@ CREATE TABLE NGAYNGHILE (
 ------------------------------------------------------------
 -- HOAN TAT TAO BANG - END OF PART 1
 ------------------------------------------------------------
--- Hóa đơn âm chỉ được phép khi là hóa đơn điều chỉnh
-ALTER TABLE HOADONHOCPHI
-    ADD CONSTRAINT chk_hd_negative_requires_dieuchinnh 
-    CHECK (TONGTIEN >= 0 OR LOAIHD = 'Dieu chinh');
 
--- Hóa đơn điều chỉnh phải có hóa đơn gốc tham chiếu
-ALTER TABLE HOADONHOCPHI
-    ADD CONSTRAINT chk_hd_dieuchinnh_needs_goc
-    CHECK (LOAIHD <> 'Dieu chinh' OR MAHOADON_GOC IS NOT NULL);
 
 

@@ -6,6 +6,8 @@ import com.trungtam.controller.GiaoVienController;
 import com.trungtam.model.DangKy;
 import com.trungtam.model.GiaoVien;
 import com.trungtam.model.LopHoc;
+import com.trungtam.model.LichHoc;
+import com.trungtam.dao.LichHocDAO;
 import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
@@ -85,19 +87,25 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
 
             if (!classNames.contains(tenLop)) classNames.add(tenLop);
 
-            // Parse tanSuat to determine schedule days
-            // tanSuat format examples: "2-4-6", "3-5-7", "2-4-6 Sang", "3-5-7 Chieu"
-            String tanSuat = lop.getTanSuat() != null ? lop.getTanSuat() : "";
-            String ca = tanSuat.toLowerCase().contains("chieu") ? "Chiều" : "Sáng";
-
-            String[] parts = tanSuat.split("\\s+")[0].split("-");
-            for (String part : parts) {
-                try {
-                    int thu = Integer.parseInt(part.trim());
-                    if (thu >= 2 && thu <= 7) {
-                        lichHoc.add(new LichHocEntry(thu, ca, tenLop, tenGV));
+            LichHocDAO lhDao = new LichHocDAO();
+            try {
+                List<LichHoc> dsLich = lhDao.findByLop(lop.getMaLopHoc());
+                for (LichHoc lh : dsLich) {
+                    if (lh.getThu() == null) continue;
+                    String thuStr = lh.getThu().replaceAll("[^0-9]", "");
+                    if (!thuStr.isEmpty()) {
+                        int thu = Integer.parseInt(thuStr);
+                        if (thu >= 2 && thu <= 7) {
+                            String ca = "Sáng";
+                            if (lh.getGioBatDau() != null && lh.getGioBatDau().compareTo("12:00") >= 0) {
+                                ca = "Chiều";
+                            }
+                            lichHoc.add(new LichHocEntry(thu, ca, tenLop, tenGV));
+                        }
                     }
-                } catch (NumberFormatException ignored) {}
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }

@@ -12,4 +12,12 @@ public class HoanTraController {
     public boolean updateTrangThai(int maHoanTra, String trangThai, int maNhanVien) {
         return hoanTraDAO.updateTrangThai(maHoanTra, trangThai, maNhanVien);
     }
+
+    public void processRefund(int refundId, int staffId, String approveOrReject, String note) throws java.sql.SQLException {
+        hoanTraDAO.processRefund(refundId, staffId, approveOrReject, note);
+    }
+
+    public boolean guiYeuCauHoanTra(HoanTra ht) {
+        return hoanTraDAO.insert(ht);
+    }
 }

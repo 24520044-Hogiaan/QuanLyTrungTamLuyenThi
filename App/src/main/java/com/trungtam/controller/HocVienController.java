@@ -20,6 +20,15 @@ public class HocVienController {
         }
     }
 
+    public List<HocVien> layDanhSachTheoLop(int maLop) {
+        try {
+            return hocVienDAO.findByLop(maLop);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return Collections.emptyList();
+        }
+    }
+
     public HocVien timTheoMa(int maHocVien) {
         try {
             return hocVienDAO.findById(maHocVien);

@@ -6,22 +6,28 @@ import com.trungtam.model.DangKy;
 import com.trungtam.model.LopHoc;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
+import com.trungtam.util.DatabaseConnection;
 
 import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.sql.*;
 import java.util.*;
 import java.util.List;
 
-/**
- * Bảng xếp hạng học viên trong lớp — dữ liệu từ database.
- */
 public class BangXepHangPanel extends JPanel {
 
     private final int maHocVien;
     private final DangKyController dangKyController = new DangKyController();
     private final LopHocController lopHocController = new LopHocController();
+
+    private final DefaultTableModel tableModel;
+    private final JLabel vRank = new JLabel("-");
+    private final JLabel vTop = new JLabel("-");
+    private final JLabel vDiem = new JLabel("-");
+    private final JComboBox<String> cboLop = new JComboBox<>();
+    private final Map<String, Integer> tenLopToMa = new HashMap<>();
 
     public BangXepHangPanel(int maHocVien) {
         this.maHocVien = maHocVien;
@@ -34,36 +40,22 @@ public class BangXepHangPanel extends JPanel {
         title.setForeground(UiTheme.SECONDARY);
         add(title, BorderLayout.NORTH);
 
+        tableModel = new DefaultTableModel(
+                new String[] { "Hạng", "Họ Tên", "Điểm TB", "Xếp Loại" }, 0) {
+            @Override
+            public boolean isCellEditable(int r, int c) { return false; }
+        };
+
         add(buildContent(), BorderLayout.CENTER);
+        loadLopData();
     }
 
     private JPanel buildContent() {
         JPanel panel = new JPanel(new BorderLayout(0, 12));
         panel.setOpaque(false);
 
-        // Load registered classes
-        List<DangKy> myDK = dangKyController.getDangKyByHocVien(maHocVien);
-        List<LopHoc> allLop = lopHocController.layDanhSach();
-        Map<Integer, LopHoc> lopMap = new HashMap<>();
-        for (LopHoc lop : allLop) lopMap.put(lop.getMaLopHoc(), lop);
-
-        List<String> lopNames = new ArrayList<>();
-        for (DangKy dk : myDK) {
-            LopHoc lop = lopMap.get(dk.getMaLopHoc());
-            if (lop != null) lopNames.add(lop.getTenLop());
-        }
-
-        if (lopNames.isEmpty()) {
-            JLabel lbl = new JLabel("Bạn chưa đăng ký lớp nào. Hãy đăng ký lớp để xem bảng xếp hạng.");
-            lbl.setFont(UiTheme.BODY);
-            lbl.setForeground(UiTheme.TEXT_MUTED);
-            lbl.setBorder(new EmptyBorder(20, 10, 20, 10));
-            panel.add(lbl, BorderLayout.CENTER);
-            return panel;
-        }
-
-        JComboBox<String> cboLop = new JComboBox<>(lopNames.toArray(new String[0]));
         cboLop.setFont(UiTheme.BODY);
+        cboLop.addActionListener(e -> loadRanking());
 
         JPanel filterBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 4));
         filterBar.setOpaque(false);
@@ -72,34 +64,16 @@ public class BangXepHangPanel extends JPanel {
         filterBar.add(lblLop);
         filterBar.add(cboLop);
 
-        JLabel lblNote = new JLabel("  (Bảng xếp hạng sẽ hiển thị khi có dữ liệu điểm)");
-        lblNote.setFont(UiTheme.CAPTION_I);
-        lblNote.setForeground(UiTheme.TEXT_MUTED);
-        filterBar.add(lblNote);
-
         panel.add(filterBar, BorderLayout.NORTH);
 
-        // Summary cards
         JPanel card = new JPanel(new GridLayout(1, 3, 12, 0));
         card.setOpaque(false);
         card.setBorder(new EmptyBorder(8, 0, 8, 0));
-
-        JLabel vRank = new JLabel("-");
-        JLabel vTop = new JLabel("-");
-        JLabel vDiem = new JLabel("-");
         card.add(UiComponents.statCard("Hạng của bạn", vRank, UiTheme.INFO));
         card.add(UiComponents.statCard("Top phần trăm", vTop, UiTheme.SUCCESS));
         card.add(UiComponents.statCard("Điểm TB của bạn", vDiem, new Color(0x6A1B9A)));
 
-        // Table placeholder
-        DefaultTableModel model = new DefaultTableModel(
-                new String[] { "Hạng", "Học Viên", "Điểm TB", "Xếp Loại" }, 0) {
-            @Override
-            public boolean isCellEditable(int r, int c) {
-                return false;
-            }
-        };
-        JTable table = new JTable(model);
+        JTable table = new JTable(tableModel);
         UiComponents.styleTable(table);
 
         JPanel centerPanel = new JPanel(new BorderLayout(0, 8));
@@ -109,5 +83,96 @@ public class BangXepHangPanel extends JPanel {
 
         panel.add(centerPanel, BorderLayout.CENTER);
         return panel;
+    }
+
+    private void loadLopData() {
+        cboLop.removeAllItems();
+        tenLopToMa.clear();
+
+        List<DangKy> myDK = dangKyController.getDangKyByHocVien(maHocVien);
+        List<LopHoc> allLop = lopHocController.layDanhSach();
+        Map<Integer, LopHoc> lopMap = new HashMap<>();
+        for (LopHoc lop : allLop) lopMap.put(lop.getMaLopHoc(), lop);
+
+        for (DangKy dk : myDK) {
+            LopHoc lop = lopMap.get(dk.getMaLopHoc());
+            if (lop != null) {
+                cboLop.addItem(lop.getTenLop());
+                tenLopToMa.put(lop.getTenLop(), lop.getMaLopHoc());
+            }
+        }
+
+        if (cboLop.getItemCount() == 0) {
+            vRank.setText("-");
+            vTop.setText("-");
+            vDiem.setText("-");
+        }
+    }
+
+    private void loadRanking() {
+        tableModel.setRowCount(0);
+        String selectedLop = (String) cboLop.getSelectedItem();
+        if (selectedLop == null || !tenLopToMa.containsKey(selectedLop)) return;
+
+        int maLop = tenLopToMa.get(selectedLop);
+
+        String sql = "SELECT MAHOCVIEN, TEN_HOC_VIEN, DIEM_TRUNG_BINH " +
+                     "FROM V_DIEM_TRUNG_BINH_KHOA_HOC WHERE MALOP = ? " +
+                     "ORDER BY DIEM_TRUNG_BINH DESC";
+
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, maLop);
+            try (ResultSet rs = ps.executeQuery()) {
+                int rank = 0;
+                int totalStudents = 0;
+                int myRank = -1;
+                double myDiemTB = 0;
+
+                List<Object[]> rows = new ArrayList<>();
+                while (rs.next()) {
+                    rank++;
+                    totalStudents++;
+                    int hvId = rs.getInt("MAHOCVIEN");
+                    String tenHV = rs.getString("TEN_HOC_VIEN");
+                    double diemTB = rs.getDouble("DIEM_TRUNG_BINH");
+                    String xepLoai = xepLoai(diemTB);
+
+                    rows.add(new Object[]{ rank, tenHV, String.format("%.2f", diemTB), xepLoai });
+
+                    if (hvId == maHocVien) {
+                        myRank = rank;
+                        myDiemTB = diemTB;
+                    }
+                }
+
+                for (Object[] row : rows) {
+                    tableModel.addRow(row);
+                }
+
+                if (myRank > 0) {
+                    vRank.setText(myRank + "/" + totalStudents);
+                    double topPercent = ((double) myRank / totalStudents) * 100;
+                    vTop.setText(String.format("Top %.0f%%", topPercent));
+                    vDiem.setText(String.format("%.2f", myDiemTB));
+                } else {
+                    vRank.setText("-");
+                    vTop.setText("-");
+                    vDiem.setText("Chưa có điểm");
+                }
+            }
+        } catch (SQLException ex) {
+            ex.printStackTrace();
+            vRank.setText("-");
+            vTop.setText("-");
+            vDiem.setText("Lỗi tải dữ liệu");
+        }
+    }
+
+    private String xepLoai(double diemTB) {
+        if (diemTB >= 8.5) return "Giỏi";
+        if (diemTB >= 7.0) return "Khá";
+        if (diemTB >= 5.0) return "Trung Bình";
+        return "Yếu";
     }
 }

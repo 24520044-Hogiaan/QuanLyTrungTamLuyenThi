@@ -8,6 +8,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
+// Trigger IDE rebuild
 public class QuanLyWindow extends JFrame {
 
     public QuanLyWindow() {

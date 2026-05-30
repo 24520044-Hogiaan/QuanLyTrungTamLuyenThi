@@ -16,6 +16,10 @@ public class HocVienDAO {
 
     private static final String SELECT_BY_TAIKHOAN = SELECT_ALL + " WHERE MATAIKHOAN = ?";
 
+    private static final String SELECT_BY_LOP = 
+            "SELECT h.MAHOCVIEN, h.MATAIKHOAN, h.HOTEN, h.NGAYSINH, h.GIOITINH, h.DIACHI, h.SDT, h.EMAIL " +
+            "FROM HOCVIEN h JOIN DANGKY d ON h.MAHOCVIEN = d.MAHOCVIEN WHERE d.MALOPHOC = ?";
+
     private static final String INSERT =
             "INSERT INTO HOCVIEN (MAHOCVIEN, MATAIKHOAN, HOTEN, NGAYSINH, GIOITINH, DIACHI, SDT, EMAIL) " +
             "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
@@ -56,6 +60,20 @@ public class HocVienDAO {
                 return rs.next() ? mapRow(rs) : null;
             }
         }
+    }
+
+    public List<HocVien> findByLop(int maLop) throws SQLException {
+        List<HocVien> result = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(SELECT_BY_LOP)) {
+            ps.setInt(1, maLop);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    result.add(mapRow(rs));
+                }
+            }
+        }
+        return result;
     }
 
     public void insert(HocVien hv) throws SQLException {

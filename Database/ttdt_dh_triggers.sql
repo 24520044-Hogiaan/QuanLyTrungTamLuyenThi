@@ -15,7 +15,7 @@
 --   6. TRG_DIEMDANH_LIMIT_CHECK      (DIEMDANH - kiem soat si so diem danh)
 --   7. TRG_BUOIHOC_RESOURCE_VAL      (BUOIHOC - trung lich/phong + suc chua phong)
 -- Muc 2.2 - Rang buoc lien thuoc tinh lien quan he (BO SUNG):
---   8. TRG_THAMGIABKT_SCORE_VAL      (THAMGIABKT - kiem soat toan ven bai kiem tra)
+--   8. TRG_THAMGIABKT_SCORE_VAL      (THAMGIABKT - kiem soat toan ven bai kiem tra)T
 --   9. TRG_INVOICE_LOCK              (HOADONHOCPHI - ngan chan sua doi hoa don da thanh toan)
 --  10. TRG_HOANTRA_AMOUNT_CHECK      (HOANTRA - han muc hoan tra <= tong tien hoa don)
 --  11. TRG_YCCL_ENROLLMENT_CHECK     (YEUCAUCHUYENLOP - kiem tra dieu kien chuyen lop)

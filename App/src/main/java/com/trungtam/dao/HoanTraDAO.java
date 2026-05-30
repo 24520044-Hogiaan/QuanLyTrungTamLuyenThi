@@ -55,4 +55,42 @@ public class HoanTraDAO {
         ht.setHinhThuc(rs.getString("HINHTHUC"));
         return ht;
     }
+
+    public void processRefund(int refundId, int staffId, String approveOrReject, String note) throws SQLException {
+        String sql = "{ CALL SP_PROCESS_REFUND(?, ?, ?, ?) }";
+        try (Connection con = DatabaseConnection.getConnection();
+             java.sql.CallableStatement cs = con.prepareCall(sql)) {
+            cs.setInt(1, refundId);
+            cs.setInt(2, staffId);
+            cs.setString(3, approveOrReject);
+            cs.setString(4, note);
+            cs.execute();
+        }
+    }
+
+    public boolean insert(HoanTra ht) {
+        String sqlMax = "SELECT COALESCE(MAX(MAHOANTRA), 0) + 1 FROM HOANTRA";
+        String sqlIns = "INSERT INTO HOANTRA(MAHOANTRA, MAHOADON, MAHOCVIEN, SOTIEN, LYDO, NGAYYEUCAU, TRANGTHAI, HINHTHUC) " +
+                        "VALUES (?, ?, ?, ?, ?, SYSDATE, 'Cho duyet', 'Chuyen Khoan')";
+        try {
+            try (Connection con = DatabaseConnection.getConnection();
+                 Statement st = con.createStatement();
+                 ResultSet rs = st.executeQuery(sqlMax)) {
+                if (rs.next()) ht.setMaHoanTra(rs.getInt(1));
+            }
+            try (Connection con = DatabaseConnection.getConnection();
+                 PreparedStatement ps = con.prepareStatement(sqlIns)) {
+                ps.setInt(1, ht.getMaHoanTra());
+                ps.setInt(2, ht.getMaHoaDon());
+                ps.setInt(3, ht.getMaHocVien());
+                ps.setDouble(4, ht.getSoTien());
+                ps.setString(5, ht.getLyDo());
+                ps.executeUpdate();
+                return true;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }
