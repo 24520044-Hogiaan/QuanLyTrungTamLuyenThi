@@ -56,4 +56,30 @@ public class ThamGiaBKTDAO {
         }
         return list;
     }
+
+    public void upsert(ThamGiaBKT tg) throws SQLException {
+        String sql = "MERGE INTO THAMGIABKT t USING (SELECT ? MABAIKIEMTRA, ? MAHOCVIEN FROM DUAL) s " +
+                "ON (t.MABAIKIEMTRA = s.MABAIKIEMTRA AND t.MAHOCVIEN = s.MAHOCVIEN) " +
+                "WHEN MATCHED THEN UPDATE SET DIEMSO = ?, NHANXET = ?, NGAYTHI = ? " +
+                "WHEN NOT MATCHED THEN INSERT (MABAIKIEMTRA, MAHOCVIEN, DIEMSO, NHANXET, NGAYTHI) VALUES (?, ?, ?, ?, ?)";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, tg.getMaBaiKiemTra());
+            ps.setInt(2, tg.getMaHocVien());
+            
+            ps.setDouble(3, tg.getDiemSo());
+            ps.setString(4, tg.getNhanXet());
+            if (tg.getNgayThi() != null) ps.setDate(5, Date.valueOf(tg.getNgayThi()));
+            else ps.setNull(5, Types.DATE);
+            
+            ps.setInt(6, tg.getMaBaiKiemTra());
+            ps.setInt(7, tg.getMaHocVien());
+            ps.setDouble(8, tg.getDiemSo());
+            ps.setString(9, tg.getNhanXet());
+            if (tg.getNgayThi() != null) ps.setDate(10, Date.valueOf(tg.getNgayThi()));
+            else ps.setNull(10, Types.DATE);
+            
+            ps.executeUpdate();
+        }
+    }
 }

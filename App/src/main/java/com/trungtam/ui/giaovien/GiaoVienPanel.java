@@ -27,7 +27,7 @@ public class GiaoVienPanel extends JPanel {
     private final List<GiaoVien> giaoVienList = new ArrayList<>();
 
     private static final String[] COT = {
-            "Mã GV", "Họ Tên", "Email", "SĐT", "Bộ Môn", "Bằng Cấp", "Trạng Thái"
+            "Mã GV", "Họ Tên", "Email", "SĐT", "Bộ Môn", "Trạng Thái"
     };
 
     public GiaoVienPanel() {
@@ -51,15 +51,14 @@ public class GiaoVienPanel extends JPanel {
         rowSorter = new TableRowSorter<>(tableModel);
         table.setRowSorter(rowSorter);
 
-        int[] widths = { 60, 180, 200, 110, 130, 90, 100 };
+        int[] widths = { 60, 180, 200, 110, 130, 100 };
         for (int i = 0; i < widths.length; i++) {
             table.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
         UiComponents.setColumnAlignments(table,
                 SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.LEFT,
-                SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.CENTER,
-                SwingConstants.CENTER);
+                SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.CENTER);
         add(UiComponents.tableScroll(table), BorderLayout.CENTER);
         loadData();
     }
@@ -99,10 +98,17 @@ public class GiaoVienPanel extends JPanel {
 
     private void refreshTable() {
         tableModel.setRowCount(0);
+        
+        com.trungtam.controller.BoMonController boMonCtrl = new com.trungtam.controller.BoMonController();
+        java.util.List<com.trungtam.model.BoMon> allBoMon = boMonCtrl.getListBoMon();
+        java.util.Map<String, String> boMonMap = new java.util.HashMap<>();
+        for (com.trungtam.model.BoMon bm : allBoMon) boMonMap.put(String.valueOf(bm.getMaBoMon()), bm.getTenBoMon());
+
         for (GiaoVien gv : giaoVienList) {
+            String tenBoMon = boMonMap.getOrDefault(gv.getMaBoMon(), gv.getMaBoMon());
             tableModel.addRow(new Object[] {
                     gv.getMaGiaoVien(), gv.getHoTen(), gv.getEmail(),
-                    gv.getSoDienThoai(), gv.getMaBoMon(), gv.getBangCap(), gv.getTrangThai()
+                    gv.getSoDienThoai(), tenBoMon, gv.getTrangThai()
             });
         }
     }
@@ -119,7 +125,7 @@ public class GiaoVienPanel extends JPanel {
         public Component getTableCellRendererComponent(
                 JTable t, Object val, boolean sel, boolean foc, int r, int c) {
             super.getTableCellRendererComponent(t, val, sel, foc, r, c);
-            if (!sel && c == 6) {
+            if (!sel && c == 5) {
                 boolean active = "Đang dạy".equals(String.valueOf(val));
                 setForeground(active ? UiTheme.SUCCESS : UiTheme.DANGER);
                 setFont(UiTheme.BODY_B);

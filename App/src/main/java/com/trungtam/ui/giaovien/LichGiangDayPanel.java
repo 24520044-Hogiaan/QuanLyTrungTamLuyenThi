@@ -40,7 +40,10 @@ public class LichGiangDayPanel extends JPanel {
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("dd/MM");
 
-    public LichGiangDayPanel() {
+    private final int maGiaoVien;
+
+    public LichGiangDayPanel(int maGiaoVien) {
+        this.maGiaoVien = maGiaoVien;
         setLayout(new BorderLayout(0, 10));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
@@ -64,8 +67,8 @@ public class LichGiangDayPanel extends JPanel {
         List<LopHoc> allLop = lopHocController.layDanhSach();
 
         for (LopHoc lop : allLop) {
-            if (!"Dang mo".equalsIgnoreCase(lop.getTrangThai()) &&
-                !"Dang hoc".equalsIgnoreCase(lop.getTrangThai())) continue;
+            if (lop.getMaGiaoVien() != maGiaoVien ||
+                (!"Dang mo".equalsIgnoreCase(lop.getTrangThai()) && !"Dang hoc".equalsIgnoreCase(lop.getTrangThai()))) continue;
 
             String tenLop = lop.getTenLop();
             if (!classNames.contains(tenLop)) classNames.add(tenLop);

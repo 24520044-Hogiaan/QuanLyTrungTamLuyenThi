@@ -9,6 +9,7 @@ import com.trungtam.model.LopHoc;
 import com.trungtam.model.LichHoc;
 import com.trungtam.dao.LichHocDAO;
 import com.trungtam.ui.UiTheme;
+import com.trungtam.ui.UiComponents;
 
 import javax.swing.*;
 import javax.swing.border.*;
@@ -79,6 +80,7 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
         for (GiaoVien gv : allGV) gvMap.put(gv.getMaGiaoVien(), gv);
 
         for (DangKy dk : myDK) {
+            if (!"Dang hoc".equalsIgnoreCase(dk.getTrangThaiDKY())) continue;
             LopHoc lop = lopMap.get(dk.getMaLopHoc());
             if (lop == null) continue;
             GiaoVien gv = gvMap.get(lop.getMaGiaoVien());
@@ -137,8 +139,15 @@ public class ThoiKhoaBieuHVPanel extends JPanel {
         navBar.add(Box.createHorizontalStrut(10));
         navBar.add(btnToday);
 
+        JButton btnRefresh = UiComponents.ghostButton("Làm mới");
+        btnRefresh.addActionListener(e -> {
+            loadData();
+            render();
+        });
+
         bar.add(title, BorderLayout.WEST);
         bar.add(navBar, BorderLayout.CENTER);
+        bar.add(btnRefresh, BorderLayout.EAST);
         return bar;
     }
 

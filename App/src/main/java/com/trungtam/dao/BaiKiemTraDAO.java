@@ -33,4 +33,31 @@ public class BaiKiemTraDAO {
         }
         return list;
     }
+
+    public void insert(BaiKiemTra bkt) throws SQLException {
+        String getIdSql = "SELECT NVL(MAX(MABAIKIEMTRA), 0) + 1 FROM BAIKIEMTRA";
+        String insertSql = "INSERT INTO BAIKIEMTRA (MABAIKIEMTRA, TENBKT, NGAYKT, THOIGIAN, LOAIBKT, MALOP, DIEMTOIDA, DIEMDAT) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (Connection con = DatabaseConnection.getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(getIdSql)) {
+            if (rs.next()) {
+                bkt.setMaBaiKiemTra(rs.getInt(1));
+            }
+            try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                ps.setInt(1, bkt.getMaBaiKiemTra());
+                ps.setString(2, bkt.getTenBKT());
+                if (bkt.getNgayKiemTra() != null) {
+                    ps.setDate(3, Date.valueOf(bkt.getNgayKiemTra()));
+                } else {
+                    ps.setNull(3, Types.DATE);
+                }
+                ps.setInt(4, bkt.getThoiGian());
+                ps.setString(5, bkt.getLoaiBKT());
+                ps.setInt(6, bkt.getMaLop());
+                ps.setInt(7, bkt.getDiemToiDa());
+                ps.setInt(8, bkt.getDiemDat());
+                ps.executeUpdate();
+            }
+        }
+    }
 }

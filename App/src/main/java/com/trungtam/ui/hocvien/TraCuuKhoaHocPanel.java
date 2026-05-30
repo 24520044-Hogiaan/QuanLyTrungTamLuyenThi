@@ -273,6 +273,14 @@ public class TraCuuKhoaHocPanel extends JPanel {
     }
 
     private void handleDangKy(LopHocInfo info) {
+        if (maHocVien <= 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Tài khoản của bạn chưa được liên kết với hồ sơ Học Viên!\n" +
+                    "Vui lòng liên hệ Quản lý trung tâm để cập nhật hồ sơ trước khi đăng ký.",
+                    "Không thể đăng ký", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
         // Check if already registered
         if (dangKyController.existsDangKy(maHocVien, info.maLopHoc)) {
             JOptionPane.showMessageDialog(this,
@@ -291,16 +299,22 @@ public class TraCuuKhoaHocPanel extends JPanel {
             return;
         }
 
+        JPanel confirmPanel = new JPanel(new GridLayout(3, 1, 0, 5));
+        confirmPanel.add(new JLabel("Xác nhận đăng ký lớp: " + info.tenLop + "?"));
+        confirmPanel.add(new JLabel("Vui lòng chọn hình thức đóng học phí:"));
+        
+        JComboBox<String> cboHinhThucTT = new JComboBox<>(new String[]{"1 thang", "Toan khoa"});
+        confirmPanel.add(cboHinhThucTT);
+
         int confirm = JOptionPane.showConfirmDialog(this,
-                "Xác nhận đăng ký lớp: " + info.tenLop + "?\n" +
-                "Sau khi đăng ký, bạn cần thanh toán học phí để hoàn tất.",
-                "Xác Nhận Đăng Ký", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) return;
+                confirmPanel,
+                "Xác Nhận Đăng Ký", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm != JOptionPane.OK_OPTION) return;
 
         DangKy dk = new DangKy();
         dk.setMaHocVien(maHocVien);
         dk.setMaLopHoc(info.maLopHoc);
-        dk.setHinhThucTT("1 thang");
+        dk.setHinhThucTT((String) cboHinhThucTT.getSelectedItem());
 
         boolean ok = dangKyController.insertDangKy(dk);
         if (ok) {

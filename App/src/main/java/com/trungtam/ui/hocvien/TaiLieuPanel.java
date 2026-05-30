@@ -83,6 +83,11 @@ public class TaiLieuPanel extends JPanel {
         lblHint.setFont(UiTheme.CAPTION_I);
         lblHint.setForeground(UiTheme.TEXT_MUTED);
         filterBar.add(lblHint);
+        
+        filterBar.add(Box.createHorizontalStrut(20));
+        JButton btnRefresh = UiComponents.ghostButton("Làm mới");
+        btnRefresh.addActionListener(e -> loadLopData());
+        filterBar.add(btnRefresh);
 
         JPanel center = new JPanel(new BorderLayout(0, 8));
         center.setOpaque(false);
@@ -102,6 +107,7 @@ public class TaiLieuPanel extends JPanel {
         for (LopHoc lop : allLop) lopMap.put(lop.getMaLopHoc(), lop);
 
         for (DangKy dk : myDK) {
+            if (!"Dang hoc".equalsIgnoreCase(dk.getTrangThaiDKY())) continue;
             LopHoc lop = lopMap.get(dk.getMaLopHoc());
             if (lop != null) {
                 cboLop.addItem(lop.getTenLop());

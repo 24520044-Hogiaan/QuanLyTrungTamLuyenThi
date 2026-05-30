@@ -33,4 +33,29 @@ public class BuoiHocDAO {
         }
         return list;
     }
+
+    public void insert(BuoiHoc bh) throws SQLException {
+        String getIdSql = "SELECT NVL(MAX(MABUOIHOC), 0) + 1 FROM BUOIHOC";
+        String insertSql = "INSERT INTO BUOIHOC (MABUOIHOC, MALOPHOC, NGAYHOC, GIOHOC, TRANGTHAI, LOAIBUOI) VALUES (?, ?, ?, ?, ?, ?)";
+        try (Connection con = DatabaseConnection.getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(getIdSql)) {
+            if (rs.next()) {
+                bh.setMaBuoiHoc(rs.getInt(1));
+            }
+            try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                ps.setInt(1, bh.getMaBuoiHoc());
+                ps.setInt(2, bh.getMaLopHoc());
+                if (bh.getNgayHoc() != null) {
+                    ps.setDate(3, Date.valueOf(bh.getNgayHoc()));
+                } else {
+                    ps.setNull(3, Types.DATE);
+                }
+                ps.setString(4, bh.getGioHoc());
+                ps.setString(5, bh.getTrangThai());
+                ps.setString(6, bh.getLoaiBuoi());
+                ps.executeUpdate();
+            }
+        }
+    }
 }

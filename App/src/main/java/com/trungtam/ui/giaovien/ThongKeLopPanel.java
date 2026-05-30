@@ -31,8 +31,10 @@ public class ThongKeLopPanel extends JPanel {
     private final JLabel lblSiSoMax = new JLabel("-");
     private final JLabel lblTrangThai = new JLabel("-");
     private final Map<String, Integer> lopNameToMa = new HashMap<>();
+    private final int maGiaoVien;
 
-    public ThongKeLopPanel() {
+    public ThongKeLopPanel(int maGiaoVien) {
+        this.maGiaoVien = maGiaoVien;
         setLayout(new BorderLayout(0, 10));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
@@ -50,7 +52,8 @@ public class ThongKeLopPanel extends JPanel {
         lopNameToMa.clear();
         List<LopHoc> allLop = lopHocController.layDanhSach();
         for (LopHoc lop : allLop) {
-            if ("Dang mo".equalsIgnoreCase(lop.getTrangThai()) || "Dang hoc".equalsIgnoreCase(lop.getTrangThai())) {
+            if (lop.getMaGiaoVien() == maGiaoVien &&
+                ("Dang mo".equalsIgnoreCase(lop.getTrangThai()) || "Dang hoc".equalsIgnoreCase(lop.getTrangThai()))) {
                 cboLop.addItem(lop.getTenLop());
                 lopNameToMa.put(lop.getTenLop(), lop.getMaLopHoc());
             }

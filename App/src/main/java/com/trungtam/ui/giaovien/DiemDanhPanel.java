@@ -3,9 +3,13 @@ package com.trungtam.ui.giaovien;
 import com.trungtam.controller.DangKyController;
 import com.trungtam.controller.HocVienController;
 import com.trungtam.controller.LopHocController;
+import com.trungtam.dao.BuoiHocDAO;
+import com.trungtam.dao.DiemDanhDAO;
 import com.trungtam.model.DangKy;
+import com.trungtam.model.DiemDanh;
 import com.trungtam.model.HocVien;
 import com.trungtam.model.LopHoc;
+import com.trungtam.model.BuoiHoc;
 import com.trungtam.ui.UiComponents;
 import com.trungtam.ui.UiTheme;
 
@@ -13,21 +17,21 @@ import javax.swing.*;
 import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
 
-/**
- * Panel điểm danh học viên — dữ liệu từ database.
- */
 public class DiemDanhPanel extends JPanel {
 
     private final LopHocController lopHocController = new LopHocController();
     private final DangKyController dangKyController = new DangKyController();
     private final HocVienController hocVienController = new HocVienController();
+    private final BuoiHocDAO buoiHocDAO = new BuoiHocDAO();
+    private final DiemDanhDAO diemDanhDAO = new DiemDanhDAO();
 
-    private static final String[] TRANG_THAI = { "Có mặt", "Vắng mặt", "Đi trễ", "Nghỉ phép" };
+    private static final String[] TRANG_THAI = { "Co mat", "Vang mat", "Tre", "Nghi phep" };
     private static final Color[] STATUS_BG = {
             new Color(0xE8F5E9), new Color(0xFFEBEE), new Color(0xFFF8E1), new Color(0xE3F2FD)
     };
@@ -36,24 +40,32 @@ public class DiemDanhPanel extends JPanel {
     };
 
     private final JComboBox<String> cboLop = new JComboBox<>();
+    private final JComboBox<String> cboBuoi = new JComboBox<>();
     private DefaultTableModel tableModel;
     private JTable table;
     private final JButton btnLuu = UiComponents.primaryButton("Lưu Điểm Danh", new Color(0x43A047));
     private final JLabel lblSoLuong = new JLabel();
-    private final JLabel lblBuoiInfo = new JLabel("← Chọn lớp để bắt đầu điểm danh");
+    private final JLabel lblBuoiInfo = new JLabel("← Chọn lớp và buổi học để điểm danh");
 
     private final Map<String, Integer> lopNameToMa = new HashMap<>();
+    private final Map<String, Integer> buoiNameToMa = new HashMap<>();
+    private final int maGiaoVien;
+    
+    private boolean isUpdatingCombo = false;
 
-    public DiemDanhPanel() {
+    public DiemDanhPanel(int maGiaoVien) {
+        this.maGiaoVien = maGiaoVien;
         setLayout(new BorderLayout(0, 10));
         setBorder(new EmptyBorder(UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M, UiTheme.PAD_M));
         setBackground(UiTheme.APP_BG);
 
-        loadLopData();
         add(buildTopBar(), BorderLayout.NORTH);
         add(buildContent(), BorderLayout.CENTER);
 
         cboLop.addActionListener(e -> onLopSelected());
+        cboBuoi.addActionListener(e -> onBuoiSelected());
+        
+        loadLopData();
     }
 
     private void loadLopData() {
@@ -61,11 +73,13 @@ public class DiemDanhPanel extends JPanel {
         lopNameToMa.clear();
         List<LopHoc> allLop = lopHocController.layDanhSach();
         for (LopHoc lop : allLop) {
-            if ("Dang mo".equalsIgnoreCase(lop.getTrangThai()) || "Dang hoc".equalsIgnoreCase(lop.getTrangThai())) {
+            if (lop.getMaGiaoVien() == maGiaoVien &&
+                ("Dang mo".equalsIgnoreCase(lop.getTrangThai()) || "Dang hoc".equalsIgnoreCase(lop.getTrangThai()))) {
                 cboLop.addItem(lop.getTenLop());
                 lopNameToMa.put(lop.getTenLop(), lop.getMaLopHoc());
             }
         }
+        if (cboLop.getItemCount() > 0) onLopSelected();
     }
 
     private JPanel buildTopBar() {
@@ -77,11 +91,25 @@ public class DiemDanhPanel extends JPanel {
 
         JPanel right = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         right.setOpaque(false);
+        
         JLabel lblLop = new JLabel("Lớp:");
         lblLop.setFont(UiTheme.BODY);
         cboLop.setFont(UiTheme.BODY);
+        
+        JLabel lblBuoi = new JLabel("Buổi:");
+        lblBuoi.setFont(UiTheme.BODY);
+        cboBuoi.setFont(UiTheme.BODY);
+        cboBuoi.setPreferredSize(new Dimension(150, 32));
+        
+        JButton btnThemBuoi = new JButton("+ Tạo Buổi Hôm Nay");
+        btnThemBuoi.setFont(UiTheme.BODY);
+        btnThemBuoi.addActionListener(e -> taoBuoiHocMoi());
+        
         right.add(lblLop);
         right.add(cboLop);
+        right.add(lblBuoi);
+        right.add(cboBuoi);
+        right.add(btnThemBuoi);
 
         bar.add(title, BorderLayout.WEST);
         bar.add(right, BorderLayout.EAST);
@@ -135,37 +163,127 @@ public class DiemDanhPanel extends JPanel {
     }
 
     private void onLopSelected() {
+        if (isUpdatingCombo) return;
         String tenLop = (String) cboLop.getSelectedItem();
         if (tenLop == null) return;
         Integer maLop = lopNameToMa.get(tenLop);
         if (maLop == null) return;
 
+        isUpdatingCombo = true;
+        cboBuoi.removeAllItems();
+        buoiNameToMa.clear();
+        try {
+            List<BuoiHoc> dsBuoi = buoiHocDAO.findByLop(maLop);
+            for (BuoiHoc bh : dsBuoi) {
+                String tenBuoi = (bh.getNgayHoc() != null ? bh.getNgayHoc().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")) : "") + 
+                                 " (" + (bh.getGioHoc() != null ? bh.getGioHoc() : "") + ")";
+                cboBuoi.addItem(tenBuoi);
+                buoiNameToMa.put(tenBuoi, bh.getMaBuoiHoc());
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        isUpdatingCombo = false;
+        
+        if (cboBuoi.getItemCount() > 0) {
+            cboBuoi.setSelectedIndex(cboBuoi.getItemCount() - 1);
+            onBuoiSelected();
+        } else {
+            tableModel.setRowCount(0);
+            lblSoLuong.setText("0 học viên  ");
+            btnLuu.setEnabled(false);
+            lblBuoiInfo.setText("← Chưa có buổi học nào cho lớp này. Hãy bấm 'Tạo Buổi Hôm Nay'.");
+        }
+    }
+    
+    private void taoBuoiHocMoi() {
+        String tenLop = (String) cboLop.getSelectedItem();
+        if (tenLop == null) return;
+        Integer maLop = lopNameToMa.get(tenLop);
+        if (maLop == null) return;
+        
+        BuoiHoc bh = new BuoiHoc();
+        bh.setMaLopHoc(maLop);
+        bh.setNgayHoc(LocalDate.now());
+        bh.setGioHoc("TBD");
+        bh.setTrangThai("Hoan thanh");
+        bh.setLoaiBuoi("Thuong");
+        try {
+            buoiHocDAO.insert(bh);
+            JOptionPane.showMessageDialog(this, "Tạo buổi học mới thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            onLopSelected();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi tạo buổi học: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private void onBuoiSelected() {
+        if (isUpdatingCombo) return;
+        String tenLop = (String) cboLop.getSelectedItem();
+        String tenBuoi = (String) cboBuoi.getSelectedItem();
+        if (tenLop == null || tenBuoi == null) return;
+        Integer maLop = lopNameToMa.get(tenLop);
+        Integer maBuoi = buoiNameToMa.get(tenBuoi);
+        if (maLop == null || maBuoi == null) return;
+
         lblBuoiInfo.setFont(UiTheme.BODY_B);
         lblBuoiInfo.setForeground(UiTheme.INFO);
-        lblBuoiInfo.setText("Lớp: " + tenLop + "  |  Ngày: " + LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        lblBuoiInfo.setText("Lớp: " + tenLop + "  |  Buổi: " + tenBuoi);
 
-        // Load students registered in this class
         List<DangKy> dkList = dangKyController.getDangKyByLop(maLop);
         List<HocVien> allHV = hocVienController.layDanhSach();
         Map<Integer, HocVien> hvMap = new HashMap<>();
         for (HocVien hv : allHV) hvMap.put(hv.getMaHocVien(), hv);
+        
+        Map<Integer, DiemDanh> diemDanhMap = new HashMap<>();
+        try {
+            List<DiemDanh> ddList = diemDanhDAO.findByBuoiHoc(maBuoi);
+            for (DiemDanh dd : ddList) diemDanhMap.put(dd.getMaHocVien(), dd);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         tableModel.setRowCount(0);
         int idx = 1;
         for (DangKy dk : dkList) {
             HocVien hv = hvMap.get(dk.getMaHocVien());
             String hoTen = hv != null ? hv.getHoTen() : "HV #" + dk.getMaHocVien();
-            tableModel.addRow(new Object[] { idx++, dk.getMaHocVien(), hoTen, "Có mặt", "" });
+            DiemDanh dd = diemDanhMap.get(dk.getMaHocVien());
+            String status = dd != null ? dd.getTrangThai() : "Co mat";
+            
+            tableModel.addRow(new Object[] { idx++, dk.getMaHocVien(), hoTen, status, "" });
         }
         lblSoLuong.setText(dkList.size() + " học viên  ");
         btnLuu.setEnabled(!dkList.isEmpty());
     }
 
     private void saveDiemDanh() {
-        long vang = countStatus("Vắng mặt"), tre = countStatus("Đi trễ");
-        JOptionPane.showMessageDialog(this,
-                String.format("Điểm danh đã lưu thành công!\n─────────────────\nVắng mặt: %d  |  Đi trễ: %d", vang, tre),
-                "Lưu thành công", JOptionPane.INFORMATION_MESSAGE);
+        String tenBuoi = (String) cboBuoi.getSelectedItem();
+        if (tenBuoi == null) return;
+        Integer maBuoi = buoiNameToMa.get(tenBuoi);
+        if (maBuoi == null) return;
+
+        long vang = countStatus("Vang mat"), tre = countStatus("Tre");
+        
+        try {
+            for (int r = 0; r < tableModel.getRowCount(); r++) {
+                int maHV = (Integer) tableModel.getValueAt(r, 1);
+                String status = (String) tableModel.getValueAt(r, 3);
+                
+                DiemDanh dd = new DiemDanh();
+                dd.setMaBuoiHoc(maBuoi);
+                dd.setMaHocVien(maHV);
+                dd.setTrangThai(status);
+                diemDanhDAO.upsert(dd);
+            }
+            JOptionPane.showMessageDialog(this,
+                    String.format("Điểm danh đã lưu thành công!\n─────────────────\nVắng mặt: %d  |  Đi trễ: %d", vang, tre),
+                    "Lưu thành công", JOptionPane.INFORMATION_MESSAGE);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(this, "Lỗi lưu điểm danh: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     private long countStatus(String status) {

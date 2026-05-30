@@ -8,7 +8,31 @@ import java.awt.*;
 
 public class MainWindow extends JFrame {
 
-    public MainWindow() {
+    private final int maGiaoVien;
+
+    public MainWindow(com.trungtam.model.TaiKhoan loggedInAccount) {
+        int maGV = -1;
+        if (loggedInAccount != null) {
+            com.trungtam.controller.NhanVienController nvCtrl = new com.trungtam.controller.NhanVienController();
+            com.trungtam.model.NhanVien nv = null;
+            for (com.trungtam.model.NhanVien n : nvCtrl.layDanhSach()) {
+                if (n.getMaTaiKhoan() == loggedInAccount.getMaTaiKhoan()) {
+                    nv = n;
+                    break;
+                }
+            }
+            if (nv != null) {
+                com.trungtam.controller.GiaoVienController gvCtrl = new com.trungtam.controller.GiaoVienController();
+                for (com.trungtam.model.GiaoVien g : gvCtrl.layDanhSach()) {
+                    if (g.getMaNhanVien() == nv.getMaNhanVien()) {
+                        maGV = g.getMaGiaoVien();
+                        break;
+                    }
+                }
+            }
+        }
+        this.maGiaoVien = maGV;
+
         setTitle("Quản Lý Giáo Viên – Trung Tâm Đào Tạo");
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
         setSize(1300, 820);
@@ -31,8 +55,8 @@ public class MainWindow extends JFrame {
         }
 
         JPanel[] panels = {
-                new GiaoVienPanel(), new DiemDanhPanel(), new NhapDiemPanel(),
-                new LichGiangDayPanel(), new ThongKeLopPanel()
+                new GiaoVienPanel(), new DiemDanhPanel(maGiaoVien), new NhapDiemPanel(maGiaoVien),
+                new LichGiangDayPanel(maGiaoVien), new ThongKeLopPanel(maGiaoVien)
         };
 
         CardLayout cards = new CardLayout();

@@ -43,10 +43,17 @@ public class ChuyenHuyLopPanel extends JPanel {
         setBorder(new EmptyBorder(UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L, UiTheme.PAD_L));
         setBackground(UiTheme.APP_BG);
 
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
         JLabel title = new JLabel("CHUYỂN / HỦY LỚP HỌC");
         title.setFont(UiTheme.TITLE_M);
         title.setForeground(UiTheme.SECONDARY);
-        add(title, BorderLayout.NORTH);
+        topPanel.add(title, BorderLayout.WEST);
+        
+        JButton btnRefresh = UiComponents.ghostButton("Làm mới");
+        btnRefresh.addActionListener(e -> loadComboData());
+        topPanel.add(btnRefresh, BorderLayout.EAST);
+        add(topPanel, BorderLayout.NORTH);
 
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(UiTheme.BODY_B);
@@ -70,7 +77,7 @@ public class ChuyenHuyLopPanel extends JPanel {
         if (cboHien != null) {
             cboHien.removeAllItems();
             for (DangKy dk : myDK) {
-                if ("Dang hoc".equalsIgnoreCase(dk.getTrangThaiDKY()) || "Cho thanh toan".equalsIgnoreCase(dk.getTrangThaiDKY())) {
+                if ("Dang hoc".equalsIgnoreCase(dk.getTrangThaiDKY())) {
                     for (LopHoc lop : allLop) {
                         if (lop.getMaLopHoc() == dk.getMaLopHoc()) {
                             cboHien.addItem(lop.getTenLop());
@@ -84,7 +91,7 @@ public class ChuyenHuyLopPanel extends JPanel {
         if (cboLopHuy != null) {
             cboLopHuy.removeAllItems();
             for (DangKy dk : myDK) {
-                if ("Dang hoc".equalsIgnoreCase(dk.getTrangThaiDKY()) || "Cho thanh toan".equalsIgnoreCase(dk.getTrangThaiDKY())) {
+                if ("Dang hoc".equalsIgnoreCase(dk.getTrangThaiDKY())) {
                     for (LopHoc lop : allLop) {
                         if (lop.getMaLopHoc() == dk.getMaLopHoc()) {
                             cboLopHuy.addItem(lop.getTenLop());
