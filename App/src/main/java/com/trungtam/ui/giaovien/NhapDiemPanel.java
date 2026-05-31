@@ -189,12 +189,14 @@ public class NhapDiemPanel extends JPanel {
         Integer maLop = lopNameToMa.get(tenLop);
         if (maLop == null) return;
         
-        JPanel pnl = new JPanel(new GridLayout(4, 2, 5, 5));
+        JPanel pnl = new JPanel(new GridLayout(5, 2, 5, 5));
+        JTextField txtNgay = new JTextField(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
         JTextField txtTen = new JTextField();
-        JComboBox<String> cboLoai = new JComboBox<>(new String[]{"Thường xuyên", "Giữa kỳ", "Cuối kỳ"});
+        JComboBox<String> cboLoai = new JComboBox<>(new String[]{"Thuong xuyen", "Giua ky", "Cuoi ky"});
         JTextField txtTgian = new JTextField("45");
         JTextField txtDiemMax = new JTextField("10");
         
+        pnl.add(new JLabel("Ngày (dd/MM/yyyy):")); pnl.add(txtNgay);
         pnl.add(new JLabel("Tên bài KT:")); pnl.add(txtTen);
         pnl.add(new JLabel("Loại:")); pnl.add(cboLoai);
         pnl.add(new JLabel("Thời gian (phút):")); pnl.add(txtTgian);
@@ -206,7 +208,14 @@ public class NhapDiemPanel extends JPanel {
             bkt.setMaLop(maLop);
             bkt.setTenBKT(txtTen.getText().trim());
             bkt.setLoaiBKT((String)cboLoai.getSelectedItem());
-            bkt.setNgayKiemTra(LocalDate.now());
+            
+            try {
+                bkt.setNgayKiemTra(java.time.LocalDate.parse(txtNgay.getText().trim(), java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Ngày không hợp lệ. Vui lòng nhập định dạng dd/MM/yyyy", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
             try {
                 bkt.setThoiGian(Integer.parseInt(txtTgian.getText().trim()));
                 bkt.setDiemToiDa(Integer.parseInt(txtDiemMax.getText().trim()));

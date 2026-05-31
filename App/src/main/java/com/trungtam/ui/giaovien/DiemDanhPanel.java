@@ -18,7 +18,7 @@ import javax.swing.border.*;
 import javax.swing.table.*;
 import java.awt.*;
 import java.sql.SQLException;
-import java.time.LocalDate;
+
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.List;
@@ -101,7 +101,7 @@ public class DiemDanhPanel extends JPanel {
         cboBuoi.setFont(UiTheme.BODY);
         cboBuoi.setPreferredSize(new Dimension(150, 32));
         
-        JButton btnThemBuoi = new JButton("+ Tạo Buổi Hôm Nay");
+        JButton btnThemBuoi = new JButton("+ Tạo Buổi Học");
         btnThemBuoi.setFont(UiTheme.BODY);
         btnThemBuoi.addActionListener(e -> taoBuoiHocMoi());
         
@@ -202,19 +202,42 @@ public class DiemDanhPanel extends JPanel {
         Integer maLop = lopNameToMa.get(tenLop);
         if (maLop == null) return;
         
-        BuoiHoc bh = new BuoiHoc();
-        bh.setMaLopHoc(maLop);
-        bh.setNgayHoc(LocalDate.now());
-        bh.setGioHoc("TBD");
-        bh.setTrangThai("Hoan thanh");
-        bh.setLoaiBuoi("Thuong");
-        try {
-            buoiHocDAO.insert(bh);
-            JOptionPane.showMessageDialog(this, "Tạo buổi học mới thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
-            onLopSelected();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            JOptionPane.showMessageDialog(this, "Lỗi tạo buổi học: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+        JTextField txtNgay = new JTextField(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        JTextField txtGio = new JTextField("08:00");
+        JComboBox<String> cboLoai = new JComboBox<>(new String[]{"Thuong", "Bu", "Them"});
+        
+        Object[] fields = {
+            "Ngày học (dd/MM/yyyy):", txtNgay,
+            "Giờ học:", txtGio,
+            "Loại buổi:", cboLoai
+        };
+        
+        int res = JOptionPane.showConfirmDialog(this, fields, "Tạo buổi học mới cho " + tenLop, JOptionPane.OK_CANCEL_OPTION);
+        if (res == JOptionPane.OK_OPTION) {
+            BuoiHoc bh = new BuoiHoc();
+            bh.setMaLopHoc(maLop);
+            try {
+                bh.setNgayHoc(java.time.LocalDate.parse(txtNgay.getText().trim(), java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(this, "Ngày không hợp lệ. Vui lòng nhập đúng định dạng dd/MM/yyyy", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
+            
+            String gioHoc = txtGio.getText().trim();
+            if (gioHoc.length() > 10) gioHoc = gioHoc.substring(0, 10);
+            bh.setGioHoc(gioHoc);
+            
+            bh.setTrangThai("Sap dien ra");
+            bh.setLoaiBuoi((String) cboLoai.getSelectedItem());
+            
+            try {
+                buoiHocDAO.insert(bh);
+                JOptionPane.showMessageDialog(this, "Tạo buổi học mới thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                onLopSelected();
+            } catch (SQLException e) {
+                e.printStackTrace();
+                JOptionPane.showMessageDialog(this, "Lỗi tạo buổi học: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
