@@ -56,15 +56,85 @@ public class HoanTraDAO {
         return ht;
     }
 
-    public void processRefund(int refundId, int staffId, String approveOrReject, String note) throws SQLException {
-        String sql = "{ CALL SP_PROCESS_REFUND(?, ?, ?, ?) }";
-        try (Connection con = DatabaseConnection.getConnection();
-             java.sql.CallableStatement cs = con.prepareCall(sql)) {
-            cs.setInt(1, refundId);
-            cs.setInt(2, staffId);
-            cs.setString(3, approveOrReject);
-            cs.setString(4, note);
-            cs.execute();
+    public void completeRefund(int refundId, int staffId, String note) throws SQLException {
+        String queryHoanTra = "SELECT SOTIEN, MAHOADON, MAHOCVIEN, HINHTHUC, TRANGTHAI FROM HOANTRA WHERE MAHOANTRA = ?";
+        String queryHoaDon = "SELECT TONGTIEN, MALOP FROM HOADONHOCPHI WHERE MAHOADON = ?";
+        String updateHoanTra = "UPDATE HOANTRA SET TRANGTHAI = 'Da hoan', MANHANVIEN = ?, NGAYHOANTRA = SYSDATE WHERE MAHOANTRA = ?";
+        String insertHoaDon = "INSERT INTO HOADONHOCPHI (MAHOADON, MAHOCVIEN, MALOP, NGAYLAP, TONGTIEN, TRANGTHAIHD, LOAIHD, HINHTHUC, MAHOADON_GOC, GHICHU) " +
+                              "VALUES ((SELECT NVL(MAX(MAHOADON), 0) + 1 FROM HOADONHOCPHI), ?, ?, SYSDATE, ?, 'Da thanh toan', 'Dieu chinh', ?, ?, ?)";
+
+        Connection con = null;
+        try {
+            con = DatabaseConnection.getConnection();
+            con.setAutoCommit(false);
+
+            double refundAmount = 0;
+            int invoiceId = 0;
+            int studentId = 0;
+            String hinhThuc = "";
+            String trangThai = "";
+
+            try (PreparedStatement ps = con.prepareStatement(queryHoanTra)) {
+                ps.setInt(1, refundId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        refundAmount = rs.getDouble("SOTIEN");
+                        invoiceId = rs.getInt("MAHOADON");
+                        studentId = rs.getInt("MAHOCVIEN");
+                        hinhThuc = rs.getString("HINHTHUC");
+                        trangThai = rs.getString("TRANGTHAI");
+                    } else {
+                        throw new SQLException("Không tìm thấy yêu cầu hoàn tiền ID: " + refundId);
+                    }
+                }
+            }
+
+            if (!"Chap thuan".equals(trangThai)) {
+                throw new SQLException("Chỉ có thể hoàn tiền cho các yêu cầu đã được 'Chấp thuận'.");
+            }
+
+            double originalTotal = 0;
+            int classId = 0;
+            try (PreparedStatement ps = con.prepareStatement(queryHoaDon)) {
+                ps.setInt(1, invoiceId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        originalTotal = rs.getDouble("TONGTIEN");
+                        classId = rs.getInt("MALOP");
+                    }
+                }
+            }
+
+            if (refundAmount > originalTotal) {
+                throw new SQLException("Số tiền hoàn trả vượt quá giá trị hóa đơn gốc.");
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(updateHoanTra)) {
+                ps.setInt(1, staffId);
+                ps.setInt(2, refundId);
+                ps.executeUpdate();
+            }
+
+            try (PreparedStatement ps = con.prepareStatement(insertHoaDon)) {
+                ps.setInt(1, studentId);
+                ps.setInt(2, classId);
+                ps.setDouble(3, -refundAmount);
+                ps.setString(4, hinhThuc);
+                ps.setInt(5, invoiceId);
+                ps.setString(6, note != null && !note.isEmpty() ? note : "Hoan tra theo yeu cau ID: " + refundId);
+                ps.executeUpdate();
+            }
+
+            con.commit();
+        } catch (SQLException e) {
+            if (con != null) {
+                try { con.rollback(); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
+            throw e;
+        } finally {
+            if (con != null) {
+                try { con.setAutoCommit(true); } catch (SQLException ex) { ex.printStackTrace(); }
+            }
         }
     }
 

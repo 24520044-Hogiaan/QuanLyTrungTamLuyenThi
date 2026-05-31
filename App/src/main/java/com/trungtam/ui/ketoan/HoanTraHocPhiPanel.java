@@ -66,36 +66,27 @@ public class HoanTraHocPhiPanel extends JPanel {
         int maHoanTra = (int) tableModel.getValueAt(modelRow, 0);
         String trangThai = (String) tableModel.getValueAt(modelRow, 6);
 
-        if (!"Cho duyet".equals(trangThai)) {
+        if (!"Chap thuan".equals(trangThai)) {
             JOptionPane.showMessageDialog(this,
-                    "Chỉ xử lý được yêu cầu ở trạng thái 'Cho duyet'.\nTrạng thái hiện tại: " + trangThai,
+                    "Kế toán chỉ thực hiện hoàn tiền cho yêu cầu đã được 'Chap thuan'.\nTrạng thái hiện tại: " + trangThai,
                     "Không hợp lệ", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        String[] options = { "Chấp thuận (APPROVE)", "Từ chối (REJECT)" };
-        int choice = JOptionPane.showOptionDialog(this,
-                "Chọn hành động cho yêu cầu hoàn trả #" + maHoanTra,
-                "Xử lý hoàn trả", JOptionPane.DEFAULT_OPTION, JOptionPane.QUESTION_MESSAGE,
-                null, options, options[0]);
+        int conf = JOptionPane.showConfirmDialog(this, 
+            "Xác nhận hoàn tiền cho yêu cầu #" + maHoanTra + "?", 
+            "Xác nhận", JOptionPane.YES_NO_OPTION);
+            
+        if (conf != JOptionPane.YES_OPTION) return;
 
-        if (choice < 0) return;
-
-        String approveOrReject = choice == 0 ? "APPROVE" : "REJECT";
-        String note = JOptionPane.showInputDialog(this, "Ghi chú (tùy chọn):", "");
+        String note = JOptionPane.showInputDialog(this, "Ghi chú hoàn tiền (tùy chọn):", "");
 
         try {
-            hoanTraController.processRefund(maHoanTra, 3, approveOrReject, note);
-            String resultMsg = choice == 0
-                    ? "Đã chấp thuận hoàn trả #" + maHoanTra + ". Hóa đơn điều chỉnh đã được tạo."
-                    : "Đã từ chối yêu cầu hoàn trả #" + maHoanTra + ".";
-            JOptionPane.showMessageDialog(this, resultMsg, "Thành công", JOptionPane.INFORMATION_MESSAGE);
+            hoanTraController.completeRefund(maHoanTra, 3, note); // 3 is mock Ke Toan id
+            JOptionPane.showMessageDialog(this, "Hoàn tiền thành công! Hóa đơn điều chỉnh âm đã được tạo.", "Thành công", JOptionPane.INFORMATION_MESSAGE);
             loadData();
         } catch (Exception ex) {
             String errorMsg = ex.getMessage();
-            if (errorMsg != null && errorMsg.contains("ORA-")) {
-                errorMsg = errorMsg.substring(errorMsg.indexOf("ORA-"));
-            }
             JOptionPane.showMessageDialog(this, "Lỗi: " + errorMsg, "Lỗi", JOptionPane.ERROR_MESSAGE);
         }
     }

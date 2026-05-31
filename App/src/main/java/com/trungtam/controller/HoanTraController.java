@@ -13,8 +13,8 @@ public class HoanTraController {
         return hoanTraDAO.updateTrangThai(maHoanTra, trangThai, maNhanVien);
     }
 
-    public void processRefund(int refundId, int staffId, String approveOrReject, String note) throws java.sql.SQLException {
-        hoanTraDAO.processRefund(refundId, staffId, approveOrReject, note);
+    public void completeRefund(int refundId, int staffId, String note) throws java.sql.SQLException {
+        hoanTraDAO.completeRefund(refundId, staffId, note);
     }
 
     public boolean guiYeuCauHoanTra(HoanTra ht) {

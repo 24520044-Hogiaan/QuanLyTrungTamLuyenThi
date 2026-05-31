@@ -21,7 +21,7 @@ public class QuanLyKhoaHocPanel extends JPanel {
     private final KhoaHocController khoaHocController = new KhoaHocController();
 
     private static final String[] COT = {
-            "Mã KH", "Tên Khóa Học", "Mô Tả", "Hình thức học phí", "Học Phí", "Tên Bộ Môn", "Cấp Độ"
+            "Mã KH", "Tên Khóa Học", "Mô Tả", "Hình thức học phí", "Học Phí", "Mã Bộ Môn", "Cấp Độ"
     };
 
     public QuanLyKhoaHocPanel() {
@@ -145,13 +145,6 @@ public class QuanLyKhoaHocPanel extends JPanel {
 
     private void loadData() {
         tableModel.setRowCount(0);
-        
-        com.trungtam.dao.BoMonDAO bmDao = new com.trungtam.dao.BoMonDAO();
-        java.util.Map<Integer, String> bmMap = new java.util.HashMap<>();
-        for (com.trungtam.model.BoMon bm : bmDao.getListBoMon()) {
-            bmMap.put(bm.getMaBoMon(), bm.getTenBoMon());
-        }
-        
         List<KhoaHoc> list = khoaHocController.layDanhSach();
         for (KhoaHoc kh : list) {
             String hinhThuc = "Đóng theo tháng";
@@ -161,13 +154,11 @@ public class QuanLyKhoaHocPanel extends JPanel {
                 hocPhi = kh.getHocPhiToanKhoa();
             }
             
-            String tenBM = bmMap.getOrDefault(kh.getMaBoMon(), String.valueOf(kh.getMaBoMon()));
-            
             tableModel.addRow(new Object[]{
                     kh.getMaKhoaHoc(), kh.getTenKhoaHoc(), kh.getMoTa(),
                     hinhThuc,
                     String.format("%,.0f VNĐ", hocPhi),
-                    tenBM, kh.getCapDo()
+                    kh.getMaBoMon(), kh.getCapDo()
             });
         }
     }

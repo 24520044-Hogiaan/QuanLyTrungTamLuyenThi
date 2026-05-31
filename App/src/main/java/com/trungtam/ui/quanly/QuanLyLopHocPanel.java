@@ -16,6 +16,7 @@ import com.trungtam.ui.UiTheme;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -451,126 +452,151 @@ public class QuanLyLopHocPanel extends JPanel {
     }
 
     private JPanel buildThongTinChungPanel(LopHoc lh) {
-        JPanel panel = new JPanel(new GridLayout(1, 2, 16, 0));
-        panel.setOpaque(false);
-        panel.setBorder(new EmptyBorder(16, 16, 16, 16));
+        JPanel wrapper = new JPanel(new GridLayout(1, 2, 16, 16));
+        wrapper.setOpaque(false);
+        wrapper.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        String khoaHocName = khoaHocNameMap.getOrDefault(lh.getMaKhoaHoc(), "Khóa " + lh.getMaKhoaHoc());
-        String gvName = giaoVienNameMap.getOrDefault(lh.getMaGiaoVien(), "Chưa phân công");
+        // Left Column
+        JPanel leftCol = new JPanel(new BorderLayout(0, 16));
+        leftCol.setOpaque(false);
+
+        JPanel card1 = buildGridCard("Thông Tin Lớp Học", 
+                new String[]{"Tên lớp :", "Khóa học :", "Giảng viên :"},
+                new String[]{lh.getTenLop() != null ? lh.getTenLop() : "", "Lớp học " + lh.getMaKhoaHoc(), "GV " + lh.getMaGiaoVien()});
+        
+        HocVienController hvController = new HocVienController();
+        int currentStudents = hvController.layDanhSachTheoLop(lh.getMaLopHoc()).size();
+        JPanel card2 = buildGridCard(null, 
+                new String[]{"Sĩ số :", "Trạng thái :", "Phòng học :"},
+                new String[]{currentStudents + " Học viên", lh.getTrangThai() != null ? lh.getTrangThai() : "", "Phòng 302"});
+
+        leftCol.add(card1, BorderLayout.NORTH);
+        leftCol.add(card2, BorderLayout.CENTER);
+
+        // Right Column
         String ngayBD = lh.getNgayBatDau() != null ? lh.getNgayBatDau().format(DATE_FMT) : "?";
         String ngayKT = lh.getNgayKetThuc() != null ? lh.getNgayKetThuc().format(DATE_FMT) : "?";
+        
+        JPanel rightCol = new JPanel(new BorderLayout(0, 16));
+        rightCol.setOpaque(false);
 
-        JPanel leftCard = buildInfoCard("Thông Tin Lớp Học", UiTheme.PRIMARY,
-                new String[]{"Tên lớp:", "Khóa học:", "Giáo viên:", "Sĩ số:", "Trạng thái:", "Phòng học:"},
-                new String[]{lh.getTenLop(), khoaHocName, gvName,
-                        lh.getSiSo() + " Học viên",
-                        lh.getTrangThai() != null ? lh.getTrangThai() : "",
-                        "Chưa cập nhật"});
-
-        JPanel rightCard = buildInfoCard("Thời Gian & Lịch Học", UiTheme.PRIMARY,
-                new String[]{"Tần suất:", "Ngày bắt đầu:", "Ngày kết thúc:"},
+        JPanel card3 = buildGridCard("Thời Gian & Lịch Học", 
+                new String[]{"Tần suất :", "Ngày bắt đầu :", "Ngày kết thúc :"},
                 new String[]{lh.getTanSuat() != null ? lh.getTanSuat() : "", ngayBD, ngayKT});
+        
+        rightCol.add(card3, BorderLayout.CENTER);
 
-        panel.add(leftCard);
-        panel.add(rightCard);
-        return panel;
+        wrapper.add(leftCol);
+        wrapper.add(rightCol);
+
+        return wrapper;
     }
 
-    private JPanel buildInfoCard(String title, Color accentColor, String[] labels, String[] values) {
+    private JPanel buildGridCard(String title, String[] labels, String[] values) {
         JPanel card = new JPanel(new BorderLayout());
         card.setBackground(UiTheme.CARD_BG);
         card.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
-                new EmptyBorder(16, 20, 16, 20)));
+                new EmptyBorder(24, 24, 24, 24)));
 
-        JLabel lblTitle = new JLabel(title);
-        lblTitle.setFont(UiTheme.TITLE_S);
-        lblTitle.setForeground(accentColor);
-        lblTitle.setBorder(new EmptyBorder(0, 0, 12, 0));
+        if (title != null && !title.isEmpty()) {
+            JLabel lblTitle = new JLabel(title);
+            lblTitle.setFont(UiTheme.TITLE_S);
+            lblTitle.setForeground(UiTheme.SUCCESS); // Dark green to match mockup
+            lblTitle.setBorder(new EmptyBorder(0, 0, 32, 0)); 
+            card.add(lblTitle, BorderLayout.NORTH);
+        }
 
-        JPanel rows = new JPanel();
-        rows.setLayout(new BoxLayout(rows, BoxLayout.Y_AXIS));
-        rows.setOpaque(false);
+        JPanel rowsPanel = new JPanel();
+        rowsPanel.setLayout(new BoxLayout(rowsPanel, BoxLayout.Y_AXIS));
+        rowsPanel.setOpaque(false);
+
         for (int i = 0; i < labels.length; i++) {
             JPanel row = new JPanel(new BorderLayout());
             row.setOpaque(false);
-            row.setBorder(new EmptyBorder(0, 0, 16, 0));
+            row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
             
             JLabel lbl = new JLabel(labels[i]);
             lbl.setFont(UiTheme.BODY_B);
-            lbl.setForeground(UiTheme.TEXT_PRIMARY);
-            lbl.setPreferredSize(new Dimension(120, 20));
+            lbl.setForeground(UiTheme.TEXT_SECONDARY);
             
             JLabel val = new JLabel(values[i]);
             val.setFont(UiTheme.BODY);
-            val.setForeground(UiTheme.TEXT_SECONDARY);
-            val.setHorizontalAlignment(SwingConstants.LEFT);
+            val.setForeground(UiTheme.TEXT_PRIMARY);
+            val.setHorizontalAlignment(SwingConstants.RIGHT);
             
             row.add(lbl, BorderLayout.WEST);
             row.add(val, BorderLayout.CENTER);
-            rows.add(row);
+            
+            rowsPanel.add(row);
+            if (i < labels.length - 1) {
+                rowsPanel.add(Box.createVerticalStrut(40));
+            }
         }
+        rowsPanel.add(Box.createVerticalGlue());
 
-        card.add(lblTitle, BorderLayout.NORTH);
-        card.add(rows, BorderLayout.CENTER);
+        card.add(rowsPanel, BorderLayout.CENTER);
         return card;
     }
+
 
     private JPanel buildHocVienTab(LopHoc lh) {
         JPanel panel = new JPanel(new BorderLayout(0, 16));
         panel.setOpaque(false);
         panel.setBorder(new EmptyBorder(16, 16, 16, 16));
 
-        JLabel title = new JLabel("Danh Sách Học Viên Lớp " + lh.getTenLop());
-        title.setFont(UiTheme.TITLE_S);
-        title.setForeground(UiTheme.PRIMARY);
-        panel.add(title, BorderLayout.NORTH);
-
-        JPanel listPanel = new JPanel();
-        listPanel.setLayout(new BoxLayout(listPanel, BoxLayout.Y_AXIS));
-        listPanel.setOpaque(false);
-
+        JPanel topBar = new JPanel(new BorderLayout());
+        topBar.setOpaque(false);
+        
         HocVienController hvController = new HocVienController();
         List<HocVien> students = hvController.layDanhSachTheoLop(lh.getMaLopHoc());
         
-        if (students.isEmpty()) {
-            JLabel empty = new JLabel("Chưa có học viên nào đăng ký lớp này.");
-            empty.setFont(UiTheme.BODY);
-            empty.setForeground(UiTheme.TEXT_MUTED);
-            listPanel.add(empty);
-        } else {
-            for (HocVien hv : students) {
-                JPanel row = new JPanel(new BorderLayout(16, 0));
-                row.setBackground(UiTheme.CARD_BG);
-                row.setBorder(BorderFactory.createCompoundBorder(
-                        BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
-                        new EmptyBorder(12, 16, 12, 16)
-                ));
-                row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
-                
-                JLabel lblTen = new JLabel(hv.getHoTen());
-                lblTen.setFont(UiTheme.BODY_B);
-                lblTen.setForeground(UiTheme.TEXT_PRIMARY);
-                
-                JLabel lblSdt = new JLabel("SĐT: " + (hv.getSoDienThoai() != null ? hv.getSoDienThoai() : "Chưa cập nhật"));
-                lblSdt.setFont(UiTheme.BODY);
-                lblSdt.setForeground(UiTheme.TEXT_SECONDARY);
-                
-                row.add(lblTen, BorderLayout.WEST);
-                row.add(lblSdt, BorderLayout.EAST);
-                
-                listPanel.add(row);
-                listPanel.add(Box.createVerticalStrut(8));
-            }
-        }
+        JLabel lblCount = new JLabel("Danh sách học viên đăng ký: " + students.size() + "/" + lh.getSiSo());
+        lblCount.setFont(UiTheme.BODY_B);
+        lblCount.setForeground(UiTheme.TEXT_PRIMARY);
+        topBar.add(lblCount, BorderLayout.WEST);
 
-        JScrollPane scroll = new JScrollPane(listPanel, 
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED, 
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-        scroll.setBorder(null);
-        scroll.setOpaque(false);
-        scroll.getViewport().setOpaque(false);
-        panel.add(scroll, BorderLayout.CENTER);
+        JPanel btnPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        btnPanel.setOpaque(false);
+        
+        JButton btnDel = UiComponents.primaryButton("Xóa học viên", UiTheme.DANGER);
+        JButton btnAdd = UiComponents.primaryButton("Thêm học viên vào lớp", UiTheme.PRIMARY);
+        
+        btnDel.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Chức năng Xóa học viên đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        });
+        btnAdd.addActionListener(e -> {
+            JOptionPane.showMessageDialog(this, "Chức năng Thêm học viên đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        });
+        
+        btnPanel.add(btnDel);
+        btnPanel.add(btnAdd);
+        topBar.add(btnPanel, BorderLayout.EAST);
+        
+        panel.add(topBar, BorderLayout.NORTH);
+
+        String[] cols = {"Mã HV", "Họ Tên", "Ngày Sinh", "Giới Tính", "SĐT", "Email"};
+        DefaultTableModel model = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        
+        for (HocVien hv : students) {
+            String ngaySinh = hv.getNgaySinh() != null ? hv.getNgaySinh().format(DATE_FMT) : "";
+            model.addRow(new Object[]{
+                hv.getMaHocVien(), hv.getHoTen(), ngaySinh, hv.getGioiTinh(),
+                hv.getSoDienThoai(), hv.getEmail()
+            });
+        }
+        
+        JTable table = new JTable(model);
+        UiComponents.styleTable(table);
+        UiComponents.setColumnAlignments(table,
+                SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.CENTER,
+                SwingConstants.CENTER, SwingConstants.CENTER, SwingConstants.LEFT);
+        
+        table.getColumnModel().getColumn(0).setMaxWidth(60);
+        
+        panel.add(UiComponents.tableScroll(table), BorderLayout.CENTER);
 
         return panel;
     }
@@ -590,8 +616,8 @@ public class QuanLyLopHocPanel extends JPanel {
         title.setForeground(UiTheme.PRIMARY);
         
         JButton btnAdd = UiComponents.primaryButton("Thêm", UiTheme.PRIMARY);
-        btnAdd.setFont(UiTheme.CAPTION);
-        btnAdd.setPreferredSize(new Dimension(70, 28));
+        // Do not override font here, let it use default BODY_B
+        btnAdd.setPreferredSize(new Dimension(80, 28));
         btnAdd.addActionListener(e -> {
             JPanel inputPanel = new JPanel(new GridLayout(3, 2, 8, 8));
             JComboBox<String> cboThu = new JComboBox<>(new String[]{"Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"});
@@ -665,9 +691,16 @@ public class QuanLyLopHocPanel extends JPanel {
                     lblGio.setFont(UiTheme.BODY);
                     lblGio.setForeground(UiTheme.TEXT_SECONDARY);
                     
-                    JButton btnDel = UiComponents.ghostButton("Xóa");
-                    btnDel.setFont(UiTheme.CAPTION);
+                    JButton btnDel = new JButton("Xóa");
+                    btnDel.setFont(UiTheme.BODY_B);
                     btnDel.setForeground(UiTheme.DANGER);
+                    btnDel.setBackground(UiTheme.CARD_BG);
+                    btnDel.setBorder(BorderFactory.createCompoundBorder(
+                            BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
+                            new EmptyBorder(2, 12, 2, 12)
+                    ));
+                    btnDel.setFocusPainted(false);
+                    btnDel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                     btnDel.addActionListener(e -> {
                         int conf = JOptionPane.showConfirmDialog(this, "Xóa lịch học này?", "Xác nhận", JOptionPane.YES_NO_OPTION);
                         if (conf == JOptionPane.YES_OPTION) {
