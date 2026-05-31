@@ -44,12 +44,12 @@ public class ThongKeLopPanel extends JPanel {
         add(buildContent(), BorderLayout.CENTER);
 
         cboLop.addActionListener(e -> onLopSelected());
-        if (cboLop.getItemCount() > 0) onLopSelected();
     }
 
     private void loadLopData() {
         cboLop.removeAllItems();
         lopNameToMa.clear();
+        cboLop.addItem("--- Chọn lớp học ---");
         List<LopHoc> allLop = lopHocController.layDanhSach();
         for (LopHoc lop : allLop) {
             if (lop.getMaGiaoVien() == maGiaoVien &&
@@ -113,7 +113,13 @@ public class ThongKeLopPanel extends JPanel {
 
     private void onLopSelected() {
         String tenLop = (String) cboLop.getSelectedItem();
-        if (tenLop == null) return;
+        if (tenLop == null || tenLop.equals("--- Chọn lớp học ---")) {
+            tableModel.setRowCount(0);
+            lblTongHV.setText("-");
+            lblSiSoMax.setText("-");
+            lblTrangThai.setText("-");
+            return;
+        }
         Integer maLop = lopNameToMa.get(tenLop);
         if (maLop == null) return;
 

@@ -284,7 +284,9 @@ public class NhapDiemPanel extends JPanel {
                 String diemStr = String.valueOf(tableModel.getValueAt(r, 3)).trim();
                 String nxStr = String.valueOf(tableModel.getValueAt(r, 4)).trim();
                 
-                if (diemStr.isEmpty()) continue; // Skip if no grade
+                if (diemStr.isEmpty()) {
+                    throw new IllegalArgumentException("Điểm không được để trống!");
+                }
                 
                 double diem = Double.parseDouble(diemStr);
                 if (diem < 0 || diem > 10) throw new NumberFormatException("Điểm phải từ 0 đến 10");
@@ -302,6 +304,8 @@ public class NhapDiemPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Lưu điểm thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(this, "Lỗi nhập điểm: Vui lòng nhập số hợp lệ (0-10)!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+        } catch (IllegalArgumentException ex) {
+            JOptionPane.showMessageDialog(this, "Lỗi nhập điểm: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
         } catch (Exception e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(this, "Lỗi lưu điểm: " + e.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);

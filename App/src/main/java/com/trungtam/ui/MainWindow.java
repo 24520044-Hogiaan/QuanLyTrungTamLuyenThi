@@ -47,7 +47,7 @@ public class MainWindow extends JFrame {
         SidebarPanel sidebar = new SidebarPanel(UiTheme.PRIMARY);
         sidebar.addSection("Chức năng chính");
         String[] titles = {
-                "Danh Sách GV", "Điểm Danh", "Nhập Điểm",
+                "Điểm Danh", "Nhập Điểm",
                 "Lịch Giảng Dạy", "Thống Kê Lớp", "Tài Liệu Học Tập"
         };
         for (String t : titles) {
@@ -55,7 +55,7 @@ public class MainWindow extends JFrame {
         }
 
         JPanel[] panels = {
-                new GiaoVienPanel(), new DiemDanhPanel(maGiaoVien), new NhapDiemPanel(maGiaoVien),
+                new DiemDanhPanel(maGiaoVien), new NhapDiemPanel(maGiaoVien),
                 new LichGiangDayPanel(maGiaoVien), new ThongKeLopPanel(maGiaoVien), new TaiLieuGiaoVienPanel(maGiaoVien)
         };
 
