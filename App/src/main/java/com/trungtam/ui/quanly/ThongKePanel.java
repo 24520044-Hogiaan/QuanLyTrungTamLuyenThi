@@ -69,13 +69,6 @@ public class ThongKePanel extends JPanel {
         top.add(kpiRow, BorderLayout.SOUTH);
 
         int currentYear = Year.now().getValue();
-        int[] monthlyRevenue = new int[12];
-        for (HoaDonHocPhi hd : hoaDonList) {
-            if (hd.getNgayLap() != null && hd.getNgayLap().getYear() == currentYear) {
-                int month = hd.getNgayLap().getMonthValue() - 1;
-                monthlyRevenue[month] += (int) hd.getTongTien();
-            }
-        }
         String[] labels = { "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12" };
 
         JPanel chartArea = new JPanel(new BorderLayout());
@@ -84,9 +77,44 @@ public class ThongKePanel extends JPanel {
                 BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
                 new EmptyBorder(16, 16, 16, 16)));
 
-        JPanel chartToolbar = buildChartToolbar(currentYear, monthlyRevenue, "Doanh Thu");
-        chartArea.add(chartToolbar, BorderLayout.NORTH);
-        chartArea.add(buildLineChart(labels, monthlyRevenue, "Doanh thu", UiTheme.DANGER), BorderLayout.CENTER);
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        toolbar.setOpaque(false);
+        JLabel lblNam = new JLabel("Năm:");
+        lblNam.setFont(UiTheme.BODY);
+        JComboBox<Integer> cboNam = new JComboBox<>();
+        for (int y = currentYear - 2; y <= currentYear + 1; y++) cboNam.addItem(y);
+        cboNam.setSelectedItem(currentYear);
+        cboNam.setFont(UiTheme.BODY);
+        JButton btnExcel = UiComponents.ghostButton("Xuất Excel");
+        toolbar.add(lblNam);
+        toolbar.add(cboNam);
+        toolbar.add(btnExcel);
+        
+        chartArea.add(toolbar, BorderLayout.NORTH);
+
+        Runnable updateChart = () -> {
+            int selectedYear = (Integer) cboNam.getSelectedItem();
+            int[] monthlyRevenue = new int[12];
+            for (HoaDonHocPhi hd : hoaDonList) {
+                if (hd.getNgayLap() != null && hd.getNgayLap().getYear() == selectedYear) {
+                    monthlyRevenue[hd.getNgayLap().getMonthValue() - 1] += (int) hd.getTongTien();
+                }
+            }
+            
+            BorderLayout layout = (BorderLayout) chartArea.getLayout();
+            if(layout.getLayoutComponent(BorderLayout.CENTER) != null) {
+                chartArea.remove(layout.getLayoutComponent(BorderLayout.CENTER));
+            }
+            chartArea.add(buildLineChart(labels, monthlyRevenue, "Doanh thu", UiTheme.DANGER), BorderLayout.CENTER);
+            chartArea.revalidate();
+            chartArea.repaint();
+            
+            for(java.awt.event.ActionListener al : btnExcel.getActionListeners()) btnExcel.removeActionListener(al);
+            btnExcel.addActionListener(e -> exportToExcel(selectedYear, monthlyRevenue, "Doanh Thu"));
+        };
+        
+        cboNam.addActionListener(e -> updateChart.run());
+        updateChart.run(); // Initial draw
 
         panel.add(top, BorderLayout.NORTH);
         panel.add(chartArea, BorderLayout.CENTER);
@@ -131,12 +159,6 @@ public class ThongKePanel extends JPanel {
         top.add(kpiRow, BorderLayout.SOUTH);
 
         int currentYear = Year.now().getValue();
-        int[] monthlyDK = new int[12];
-        for (DangKy dk : dkList) {
-            if (dk.getNgayDangKy() != null && dk.getNgayDangKy().getYear() == currentYear) {
-                monthlyDK[dk.getNgayDangKy().getMonthValue() - 1] += 1;
-            }
-        }
         String[] labels = { "T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12" };
 
         JPanel chartArea = new JPanel(new BorderLayout());
@@ -145,37 +167,51 @@ public class ThongKePanel extends JPanel {
                 BorderFactory.createLineBorder(UiTheme.CARD_BORDER, 1),
                 new EmptyBorder(16, 16, 16, 16)));
 
-        JPanel chartToolbar = buildChartToolbar(currentYear, monthlyDK, "Dang Ky");
-        chartArea.add(chartToolbar, BorderLayout.NORTH);
-        chartArea.add(buildLineChart(labels, monthlyDK, "Số lượng đăng ký", UiTheme.DANGER), BorderLayout.CENTER);
+        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
+        toolbar.setOpaque(false);
+        JLabel lblNam = new JLabel("Năm:");
+        lblNam.setFont(UiTheme.BODY);
+        JComboBox<Integer> cboNam = new JComboBox<>();
+        for (int y = currentYear - 2; y <= currentYear + 1; y++) cboNam.addItem(y);
+        cboNam.setSelectedItem(currentYear);
+        cboNam.setFont(UiTheme.BODY);
+        JButton btnExcel = UiComponents.ghostButton("Xuất Excel");
+        toolbar.add(lblNam);
+        toolbar.add(cboNam);
+        toolbar.add(btnExcel);
+        
+        chartArea.add(toolbar, BorderLayout.NORTH);
+
+        Runnable updateChart = () -> {
+            int selectedYear = (Integer) cboNam.getSelectedItem();
+            int[] monthlyDK = new int[12];
+            for (DangKy dk : dkList) {
+                if (dk.getNgayDangKy() != null && dk.getNgayDangKy().getYear() == selectedYear) {
+                    monthlyDK[dk.getNgayDangKy().getMonthValue() - 1] += 1;
+                }
+            }
+            
+            BorderLayout layout = (BorderLayout) chartArea.getLayout();
+            if(layout.getLayoutComponent(BorderLayout.CENTER) != null) {
+                chartArea.remove(layout.getLayoutComponent(BorderLayout.CENTER));
+            }
+            chartArea.add(buildLineChart(labels, monthlyDK, "Số lượng đăng ký", UiTheme.PRIMARY), BorderLayout.CENTER);
+            chartArea.revalidate();
+            chartArea.repaint();
+            
+            for(java.awt.event.ActionListener al : btnExcel.getActionListeners()) btnExcel.removeActionListener(al);
+            btnExcel.addActionListener(e -> exportToExcel(selectedYear, monthlyDK, "Dang Ky"));
+        };
+        
+        cboNam.addActionListener(e -> updateChart.run());
+        updateChart.run(); // Initial draw
 
         panel.add(top, BorderLayout.NORTH);
         panel.add(chartArea, BorderLayout.CENTER);
         return panel;
     }
 
-    private JPanel buildChartToolbar(int currentYear, int[] data, String reportType) {
-        JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 4));
-        toolbar.setOpaque(false);
 
-        JLabel lblNam = new JLabel("Năm:");
-        lblNam.setFont(UiTheme.BODY);
-
-        JComboBox<Integer> cboNam = new JComboBox<>();
-        for (int y = currentYear - 2; y <= currentYear + 1; y++) {
-            cboNam.addItem(y);
-        }
-        cboNam.setSelectedItem(currentYear);
-        cboNam.setFont(UiTheme.BODY);
-
-        JButton btnExcel = UiComponents.ghostButton("Xuất Excel");
-        btnExcel.addActionListener(e -> exportToExcel(currentYear, data, reportType));
-
-        toolbar.add(lblNam);
-        toolbar.add(cboNam);
-        toolbar.add(btnExcel);
-        return toolbar;
-    }
 
     private void exportToExcel(int year, int[] data, String reportType) {
         JFileChooser fileChooser = new JFileChooser();
@@ -244,7 +280,7 @@ public class ThongKePanel extends JPanel {
                 g2.setColor(UiTheme.TEXT_MUTED);
                 g2.setFont(UiTheme.CAPTION);
                 FontMetrics fmAxis = g2.getFontMetrics();
-                String yAxisLabel = seriesName.contains("doanh") ? "Doanh thu" : "Số lượng đăng ký";
+                String yAxisLabel = seriesName.toLowerCase().contains("doanh") ? "Doanh thu" : "Số lượng đăng ký";
                 g2.rotate(-Math.PI / 2);
                 g2.drawString(yAxisLabel, -(padTop + chartH / 2 + fmAxis.stringWidth(yAxisLabel) / 2), 14);
                 g2.rotate(Math.PI / 2);
