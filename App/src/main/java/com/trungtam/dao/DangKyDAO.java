@@ -165,6 +165,19 @@ public class DangKyDAO {
         return false;
     }
 
+    public boolean deleteDangKy(int maHocVien, int maLopHoc) {
+        String sql = "DELETE FROM DANGKY WHERE MAHOCVIEN = ? AND MALOPHOC = ?";
+        try (Connection con = DatabaseConnection.getConnection();
+             PreparedStatement ps = con.prepareStatement(sql)) {
+            ps.setInt(1, maHocVien);
+            ps.setInt(2, maLopHoc);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
     public List<DangKy> getDangKyByLop(int maLopHoc) {
         List<DangKy> list = new ArrayList<>();
         String sql = "SELECT * FROM DANGKY WHERE MALOPHOC = ?";

@@ -14,4 +14,5 @@ public class DangKyController {
     public int countByLop(int maLopHoc) { return dangKyDAO.countByLop(maLopHoc); }
     public boolean insertDangKy(DangKy dk) { return dangKyDAO.insertDangKy(dk); }
     public boolean existsDangKy(int maHocVien, int maLopHoc) { return dangKyDAO.existsDangKy(maHocVien, maLopHoc); }
+    public boolean deleteDangKy(int maHocVien, int maLopHoc) { return dangKyDAO.deleteDangKy(maHocVien, maLopHoc); }
 }

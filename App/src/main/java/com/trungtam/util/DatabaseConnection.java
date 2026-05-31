@@ -27,22 +27,37 @@ public final class DatabaseConnection {
         PASSWORD = props.getProperty("db.password", "12345678");
     }
 
-    private static Connection connection;
+    private static Connection realConnection;
+    private static Connection proxyConnection;
 
     private DatabaseConnection() {
     }
 
-    public static Connection getConnection() throws SQLException {
-        if (connection == null || connection.isClosed()) {
-            connection = DriverManager.getConnection(URL, USER, PASSWORD);
+    public static synchronized Connection getConnection() throws SQLException {
+        if (realConnection == null || realConnection.isClosed()) {
+            realConnection = DriverManager.getConnection(URL, USER, PASSWORD);
+            
+            proxyConnection = (Connection) java.lang.reflect.Proxy.newProxyInstance(
+                Connection.class.getClassLoader(),
+                new Class<?>[]{Connection.class},
+                (proxy, method, args) -> {
+                    if ("close".equals(method.getName())) {
+                        return null; // Do nothing, keep connection alive
+                    }
+                    if ("isClosed".equals(method.getName())) {
+                        return false;
+                    }
+                    return method.invoke(realConnection, args);
+                }
+            );
         }
-        return connection;
+        return proxyConnection;
     }
 
     public static void closeConnection() {
-        if (connection != null) {
+        if (realConnection != null) {
             try {
-                connection.close();
+                realConnection.close();
             } catch (SQLException ignored) {
             }
         }

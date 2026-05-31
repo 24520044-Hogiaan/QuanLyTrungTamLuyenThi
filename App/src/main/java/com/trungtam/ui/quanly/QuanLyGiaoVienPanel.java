@@ -120,7 +120,31 @@ public class QuanLyGiaoVienPanel extends JPanel {
             JOptionPane.showMessageDialog(this, "Vui lòng chọn giáo viên cần phân công!", "Thông báo", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        JOptionPane.showMessageDialog(this, "Chức năng phân công giáo viên đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+        int modelRow = table.convertRowIndexToModel(row);
+        int maGV = (int) tableModel.getValueAt(modelRow, 0);
+
+        com.trungtam.controller.LopHocController lopHocController = new com.trungtam.controller.LopHocController();
+        List<com.trungtam.model.LopHoc> tatCaLop = lopHocController.layDanhSach();
+        
+        if(tatCaLop.isEmpty()) {
+             JOptionPane.showMessageDialog(this, "Không có lớp học nào trên hệ thống.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+             return;
+        }
+
+        JComboBox<com.trungtam.model.LopHoc> cboLopHoc = new JComboBox<>(tatCaLop.toArray(new com.trungtam.model.LopHoc[0]));
+        int res = JOptionPane.showConfirmDialog(this, cboLopHoc, "Chọn lớp để phân công cho Giáo viên (Mã: " + maGV + ")", JOptionPane.OK_CANCEL_OPTION);
+        
+        if (res == JOptionPane.OK_OPTION) {
+             com.trungtam.model.LopHoc selectedLop = (com.trungtam.model.LopHoc) cboLopHoc.getSelectedItem();
+             if (selectedLop != null) {
+                 selectedLop.setMaGiaoVien(maGV);
+                 if (lopHocController.capNhatLopHoc(selectedLop)) {
+                     JOptionPane.showMessageDialog(this, "Phân công giáo viên thành công!");
+                 } else {
+                     JOptionPane.showMessageDialog(this, "Phân công thất bại!", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                 }
+             }
+        }
     }
 
     private void themGiaoVien() {

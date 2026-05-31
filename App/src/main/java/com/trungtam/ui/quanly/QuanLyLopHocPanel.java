@@ -19,6 +19,9 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.time.format.DateTimeFormatter;
+import com.trungtam.controller.DangKyController;
+import com.trungtam.model.DangKy;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -562,19 +565,6 @@ public class QuanLyLopHocPanel extends JPanel {
         JButton btnDel = UiComponents.primaryButton("Xóa học viên", UiTheme.DANGER);
         JButton btnAdd = UiComponents.primaryButton("Thêm học viên vào lớp", UiTheme.PRIMARY);
         
-        btnDel.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng Xóa học viên đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        });
-        btnAdd.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this, "Chức năng Thêm học viên đang phát triển.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
-        });
-        
-        btnPanel.add(btnDel);
-        btnPanel.add(btnAdd);
-        topBar.add(btnPanel, BorderLayout.EAST);
-        
-        panel.add(topBar, BorderLayout.NORTH);
-
         String[] cols = {"Mã HV", "Họ Tên", "Ngày Sinh", "Giới Tính", "SĐT", "Email"};
         DefaultTableModel model = new DefaultTableModel(cols, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
@@ -593,12 +583,148 @@ public class QuanLyLopHocPanel extends JPanel {
         UiComponents.setColumnAlignments(table,
                 SwingConstants.CENTER, SwingConstants.LEFT, SwingConstants.CENTER,
                 SwingConstants.CENTER, SwingConstants.CENTER, SwingConstants.LEFT);
-        
         table.getColumnModel().getColumn(0).setMaxWidth(60);
+
+        btnDel.addActionListener(e -> {
+            int row = table.getSelectedRow();
+            if (row < 0) {
+                JOptionPane.showMessageDialog(this, "Vui lòng chọn một học viên để xóa.", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            int confirm = JOptionPane.showConfirmDialog(this, "Bạn có chắc chắn muốn xóa học viên này khỏi lớp?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                int maHocVien = (int) table.getValueAt(row, 0);
+                DangKyController dkController = new DangKyController();
+                if (dkController.deleteDangKy(maHocVien, lh.getMaLopHoc())) {
+                    JOptionPane.showMessageDialog(this, "Đã xóa học viên khỏi lớp.");
+                    model.removeRow(row);
+                    lblCount.setText("Danh sách học viên đăng ký: " + model.getRowCount() + "/" + lh.getSiSo());
+                    loadData(); 
+                } else {
+                    JOptionPane.showMessageDialog(this, "Lỗi khi xóa học viên.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+
+        btnAdd.addActionListener(e -> {
+            List<HocVien> allStudents = hvController.layDanhSach();
+            List<HocVien> unassigned = new ArrayList<>();
+            DangKyController dkController = new DangKyController();
+            for(HocVien h : allStudents) {
+                if(!dkController.existsDangKy(h.getMaHocVien(), lh.getMaLopHoc())) {
+                    unassigned.add(h);
+                }
+            }
+            if(unassigned.isEmpty()) {
+                JOptionPane.showMessageDialog(this, "Tất cả học viên đã có trong lớp này.", "Thông báo", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            
+            showAddStudentDialog(lh, unassigned, model, lblCount);
+        });
         
+        btnPanel.add(btnDel);
+        btnPanel.add(btnAdd);
+        topBar.add(btnPanel, BorderLayout.EAST);
+        
+        panel.add(topBar, BorderLayout.NORTH);
         panel.add(UiComponents.tableScroll(table), BorderLayout.CENTER);
 
         return panel;
+    }
+
+    private void showAddStudentDialog(LopHoc lh, List<HocVien> unassigned, DefaultTableModel model, JLabel lblCount) {
+        JDialog dialog = new JDialog(SwingUtilities.getWindowAncestor(this), "Thêm học viên vào lớp", Dialog.ModalityType.APPLICATION_MODAL);
+        dialog.setSize(650, 450);
+        dialog.setLocationRelativeTo(this);
+        
+        JPanel contentPane = new JPanel(new BorderLayout(16, 16));
+        contentPane.setBorder(new EmptyBorder(16, 16, 16, 16));
+        contentPane.setBackground(UiTheme.APP_BG);
+        
+        JTextField txtSearch = new JTextField();
+        txtSearch.putClientProperty("JTextField.placeholderText", "Tìm kiếm theo tên, mã học viên, SĐT...");
+        txtSearch.setFont(UiTheme.BODY);
+        
+        JPanel topPanel = new JPanel(new BorderLayout(8, 0));
+        topPanel.setOpaque(false);
+        JLabel lblSearch = new JLabel("Tìm kiếm:");
+        lblSearch.setFont(UiTheme.BODY_B);
+        lblSearch.setForeground(UiTheme.TEXT_PRIMARY);
+        topPanel.add(lblSearch, BorderLayout.WEST);
+        topPanel.add(txtSearch, BorderLayout.CENTER);
+        
+        String[] cols = {"Mã HV", "Họ Tên", "SĐT", "Email"};
+        DefaultTableModel searchModel = new DefaultTableModel(cols, 0) {
+            @Override public boolean isCellEditable(int r, int c) { return false; }
+        };
+        for(HocVien h : unassigned) {
+            searchModel.addRow(new Object[]{h.getMaHocVien(), h.getHoTen(), h.getSoDienThoai(), h.getEmail()});
+        }
+        
+        JTable searchTable = new JTable(searchModel);
+        UiComponents.styleTable(searchTable);
+        searchTable.getColumnModel().getColumn(0).setMaxWidth(80);
+        
+        javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(searchModel);
+        searchTable.setRowSorter(sorter);
+        
+        txtSearch.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override public void keyReleased(java.awt.event.KeyEvent e) {
+                String kw = txtSearch.getText().trim();
+                sorter.setRowFilter(kw.isEmpty() ? null : javax.swing.RowFilter.regexFilter("(?i)" + kw));
+            }
+        });
+        
+        JPanel bottomPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        bottomPanel.setOpaque(false);
+        JButton btnCancel = UiComponents.ghostButton("Hủy");
+        JButton btnAdd = UiComponents.primaryButton("Thêm vào lớp", UiTheme.PRIMARY);
+        
+        btnCancel.addActionListener(e -> dialog.dispose());
+        btnAdd.addActionListener(e -> {
+            int viewRow = searchTable.getSelectedRow();
+            if(viewRow < 0) {
+                JOptionPane.showMessageDialog(dialog, "Vui lòng chọn một học viên trong bảng để thêm!", "Thông báo", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            int modelRow = searchTable.convertRowIndexToModel(viewRow);
+            int maHV = (int) searchModel.getValueAt(modelRow, 0);
+            
+            HocVien sel = unassigned.stream().filter(h -> h.getMaHocVien() == maHV).findFirst().orElse(null);
+            if(sel != null) {
+                DangKy dk = new DangKy();
+                dk.setMaHocVien(sel.getMaHocVien());
+                dk.setMaLopHoc(lh.getMaLopHoc());
+                dk.setNgayDangKy(java.time.LocalDate.now());
+                dk.setTrangThaiDKY("Thanh cong");
+                dk.setHinhThucTT("Tien mat");
+                
+                DangKyController dkController = new DangKyController();
+                if(dkController.insertDangKy(dk)) {
+                    JOptionPane.showMessageDialog(dialog, "Thêm học viên thành công!");
+                    String ngaySinh = sel.getNgaySinh() != null ? sel.getNgaySinh().format(DATE_FMT) : "";
+                    model.addRow(new Object[]{sel.getMaHocVien(), sel.getHoTen(), ngaySinh, sel.getGioiTinh(), sel.getSoDienThoai(), sel.getEmail()});
+                    lblCount.setText("Danh sách học viên đăng ký: " + model.getRowCount() + "/" + lh.getSiSo());
+                    loadData();
+                    dialog.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(dialog, "Lỗi khi thêm học viên.", "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        
+        bottomPanel.add(btnCancel);
+        bottomPanel.add(btnAdd);
+        
+        contentPane.add(topPanel, BorderLayout.NORTH);
+        contentPane.add(UiComponents.tableScroll(searchTable), BorderLayout.CENTER);
+        contentPane.add(bottomPanel, BorderLayout.SOUTH);
+        
+        dialog.setContentPane(contentPane);
+        dialog.setVisible(true);
+        
+
     }
 
 
