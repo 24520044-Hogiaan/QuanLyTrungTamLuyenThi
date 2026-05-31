@@ -18,4 +18,34 @@ public class KhoaHocController {
             return Collections.emptyList();
         }
     }
+
+    public boolean themKhoaHoc(KhoaHoc kh) {
+        try {
+            khoaHocDAO.insert(kh);
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean capNhatKhoaHoc(KhoaHoc kh) {
+        try {
+            khoaHocDAO.update(kh);
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    public boolean xoaKhoaHoc(int maKhoaHoc) {
+        try {
+            khoaHocDAO.delete(maKhoaHoc);
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
 }

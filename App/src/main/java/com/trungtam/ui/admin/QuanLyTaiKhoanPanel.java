@@ -68,26 +68,72 @@ public class QuanLyTaiKhoanPanel extends JPanel {
         });
         JPanel buttons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttons.setOpaque(false);
-        buttons.add(UiComponents.primaryButton("Thêm mới", UiTheme.ADMIN));
+        JButton addBtn = UiComponents.primaryButton("Thêm mới", UiTheme.ADMIN);
+        addBtn.addActionListener(e -> {
+            TaiKhoanDialog dialog = new TaiKhoanDialog(SwingUtilities.getWindowAncestor(this), null);
+            dialog.setVisible(true);
+            if (dialog.isSaved()) {
+                com.trungtam.dao.TaiKhoanDAO dao = new com.trungtam.dao.TaiKhoanDAO();
+                try {
+                    dao.insert(dialog.getTaiKhoan());
+                    JOptionPane.showMessageDialog(this, "Thêm tài khoản thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    loadData();
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "Lỗi thêm tài khoản: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
+        });
+        buttons.add(addBtn);
+        
         JButton editBtn = UiComponents.ghostButton("Sửa");
         editBtn.addActionListener(e -> {
-            if (table.getSelectedRow() < 0) {
+            int row = table.getSelectedRow();
+            if (row < 0) {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn tài khoản cần sửa.");
                 return;
             }
-            JOptionPane.showMessageDialog(this, "Chức năng sửa tài khoản — đang phát triển.");
+            int maTK = (int) table.getValueAt(row, 0);
+            com.trungtam.dao.TaiKhoanDAO dao = new com.trungtam.dao.TaiKhoanDAO();
+            try {
+                com.trungtam.model.TaiKhoan tk = dao.findById(maTK);
+                if (tk != null) {
+                    TaiKhoanDialog dialog = new TaiKhoanDialog(SwingUtilities.getWindowAncestor(this), tk);
+                    dialog.setVisible(true);
+                    if (dialog.isSaved()) {
+                        dao.update(dialog.getTaiKhoan());
+                        JOptionPane.showMessageDialog(this, "Cập nhật tài khoản thành công!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                        loadData();
+                    }
+                }
+            } catch (SQLException ex) {
+                JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+            }
         });
         buttons.add(editBtn);
+        
         JButton delBtn = UiComponents.ghostButton("Vô hiệu hóa");
         delBtn.setForeground(UiTheme.DANGER);
         delBtn.addActionListener(e -> {
-            if (table.getSelectedRow() < 0) {
+            int row = table.getSelectedRow();
+            if (row < 0) {
                 JOptionPane.showMessageDialog(this, "Vui lòng chọn tài khoản cần vô hiệu hóa.");
                 return;
             }
-            JOptionPane.showMessageDialog(this, "Chức năng vô hiệu hóa — đang phát triển.");
+            int maTK = (int) table.getValueAt(row, 0);
+            int confirm = JOptionPane.showConfirmDialog(this, "Vô hiệu hóa tài khoản #" + maTK + "?", "Xác nhận", JOptionPane.YES_NO_OPTION);
+            if (confirm == JOptionPane.YES_OPTION) {
+                com.trungtam.dao.TaiKhoanDAO dao = new com.trungtam.dao.TaiKhoanDAO();
+                try {
+                    dao.updateStatus(maTK, "Vo hieu hoa");
+                    JOptionPane.showMessageDialog(this, "Đã vô hiệu hóa tài khoản!", "Thành công", JOptionPane.INFORMATION_MESSAGE);
+                    loadData();
+                } catch (SQLException ex) {
+                    JOptionPane.showMessageDialog(this, "Lỗi: " + ex.getMessage(), "Lỗi", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         });
         buttons.add(delBtn);
+        
         JButton refreshBtn = UiComponents.ghostButton("Làm mới");
         refreshBtn.addActionListener(e -> loadData());
         buttons.add(refreshBtn);

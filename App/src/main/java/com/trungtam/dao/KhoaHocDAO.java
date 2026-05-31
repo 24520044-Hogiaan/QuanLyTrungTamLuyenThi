@@ -47,4 +47,50 @@ public class KhoaHocDAO {
         kh.setCapDo(rs.getString("CAPDO"));
         return kh;
     }
+
+    public void insert(KhoaHoc kh) throws SQLException {
+        String getIdSql = "SELECT NVL(MAX(MAKHOAHOC), 0) + 1 FROM KHOAHOC";
+        String insertSql = "INSERT INTO KHOAHOC (MAKHOAHOC, TENKH, MOTA, HOCPHITHANG, HOCPHITOANKH, MABOMON, CAPDO) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DatabaseConnection.getConnection();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(getIdSql)) {
+            if (rs.next()) {
+                kh.setMaKhoaHoc(rs.getInt(1));
+            }
+            try (PreparedStatement ps = conn.prepareStatement(insertSql)) {
+                ps.setInt(1, kh.getMaKhoaHoc());
+                ps.setString(2, kh.getTenKhoaHoc());
+                ps.setString(3, kh.getMoTa());
+                ps.setDouble(4, kh.getHocPhiThang());
+                ps.setDouble(5, kh.getHocPhiToanKhoa());
+                ps.setInt(6, kh.getMaBoMon());
+                ps.setString(7, kh.getCapDo());
+                ps.executeUpdate();
+            }
+        }
+    }
+
+    public void update(KhoaHoc kh) throws SQLException {
+        String sql = "UPDATE KHOAHOC SET TENKH = ?, MOTA = ?, HOCPHITHANG = ?, HOCPHITOANKH = ?, MABOMON = ?, CAPDO = ? WHERE MAKHOAHOC = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setString(1, kh.getTenKhoaHoc());
+            ps.setString(2, kh.getMoTa());
+            ps.setDouble(3, kh.getHocPhiThang());
+            ps.setDouble(4, kh.getHocPhiToanKhoa());
+            ps.setInt(5, kh.getMaBoMon());
+            ps.setString(6, kh.getCapDo());
+            ps.setInt(7, kh.getMaKhoaHoc());
+            ps.executeUpdate();
+        }
+    }
+
+    public void delete(int maKhoaHoc) throws SQLException {
+        String sql = "DELETE FROM KHOAHOC WHERE MAKHOAHOC = ?";
+        try (Connection conn = DatabaseConnection.getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, maKhoaHoc);
+            ps.executeUpdate();
+        }
+    }
 }
