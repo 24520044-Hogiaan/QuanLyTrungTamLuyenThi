@@ -48,7 +48,7 @@ public class MainWindow extends JFrame {
         sidebar.addSection("Chức năng chính");
         String[] titles = {
                 "Danh Sách GV", "Điểm Danh", "Nhập Điểm",
-                "Lịch Giảng Dạy", "Thống Kê Lớp"
+                "Lịch Giảng Dạy", "Thống Kê Lớp", "Tài Liệu Học Tập"
         };
         for (String t : titles) {
             sidebar.addItem(t);
@@ -56,7 +56,7 @@ public class MainWindow extends JFrame {
 
         JPanel[] panels = {
                 new GiaoVienPanel(), new DiemDanhPanel(maGiaoVien), new NhapDiemPanel(maGiaoVien),
-                new LichGiangDayPanel(maGiaoVien), new ThongKeLopPanel(maGiaoVien)
+                new LichGiangDayPanel(maGiaoVien), new ThongKeLopPanel(maGiaoVien), new TaiLieuGiaoVienPanel(maGiaoVien)
         };
 
         CardLayout cards = new CardLayout();

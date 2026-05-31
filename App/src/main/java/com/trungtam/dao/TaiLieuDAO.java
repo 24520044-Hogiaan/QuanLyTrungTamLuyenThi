@@ -28,4 +28,23 @@ public class TaiLieuDAO {
         }
         return list;
     }
+    public boolean insert(TaiLieu tl) throws SQLException {
+        String getIdSql = "SELECT COALESCE(MAX(MATAILIEU), 0) + 1 FROM TAILIEU";
+        String insertSql = "INSERT INTO TAILIEU(MATAILIEU, TENTAILIEU, LINK, MALOPHOC) VALUES (?, ?, ?, ?)";
+        
+        try (Connection con = DatabaseConnection.getConnection();
+             Statement stmt = con.createStatement();
+             ResultSet rs = stmt.executeQuery(getIdSql)) {
+            if (rs.next()) {
+                tl.setMaTaiLieu(rs.getInt(1));
+            }
+            try (PreparedStatement ps = con.prepareStatement(insertSql)) {
+                ps.setInt(1, tl.getMaTaiLieu());
+                ps.setString(2, tl.getTenTaiLieu());
+                ps.setString(3, tl.getLink());
+                ps.setInt(4, tl.getMaLopHoc());
+                return ps.executeUpdate() > 0;
+            }
+        }
+    }
 }

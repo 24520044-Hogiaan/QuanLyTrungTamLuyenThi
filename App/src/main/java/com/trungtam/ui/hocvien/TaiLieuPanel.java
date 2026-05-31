@@ -99,6 +99,14 @@ public class TaiLieuPanel extends JPanel {
     }
 
     private void loadLopData() {
+        // Temporarily remove listener to avoid triggering null selection
+        java.awt.event.ActionListener[] listeners = cboLop.getActionListeners();
+        for (java.awt.event.ActionListener al : listeners) {
+            cboLop.removeActionListener(al);
+        }
+        
+        cboLop.removeAllItems();
+        cboLop.addItem("Tất cả lớp");
         tenLopToMa.clear();
 
         List<DangKy> myDK = dangKyController.getDangKyByHocVien(maHocVien);
@@ -109,12 +117,18 @@ public class TaiLieuPanel extends JPanel {
         for (DangKy dk : myDK) {
             if (!"Dang hoc".equalsIgnoreCase(dk.getTrangThaiDKY())) continue;
             LopHoc lop = lopMap.get(dk.getMaLopHoc());
-            if (lop != null) {
+            if (lop != null && !tenLopToMa.containsKey(lop.getTenLop())) {
                 cboLop.addItem(lop.getTenLop());
                 tenLopToMa.put(lop.getTenLop(), lop.getMaLopHoc());
             }
         }
-
+        
+        // Restore listener
+        for (java.awt.event.ActionListener al : listeners) {
+            cboLop.addActionListener(al);
+        }
+        
+        // Trigger load
         loadTaiLieu();
     }
 
