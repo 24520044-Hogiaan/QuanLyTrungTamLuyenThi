@@ -698,7 +698,7 @@ public class QuanLyLopHocPanel extends JPanel {
                 dk.setMaLopHoc(lh.getMaLopHoc());
                 dk.setNgayDangKy(java.time.LocalDate.now());
                 dk.setTrangThaiDKY("Thanh cong");
-                dk.setHinhThucTT("Tien mat");
+                dk.setHinhThucTT("Toan khoa");
                 
                 DangKyController dkController = new DangKyController();
                 if(dkController.insertDangKy(dk)) {
