@@ -22,9 +22,9 @@ public final class DatabaseConnection {
             }
         } catch (IOException ignored) {
         }
-        URL = props.getProperty("db.url", "jdbc:oracle:thin:@localhost:1521:xe");
-        USER = props.getProperty("db.user", "system");
-        PASSWORD = props.getProperty("db.password", "12345678");
+        URL = "jdbc:oracle:thin:@//localhost:1521/orcl";
+        USER = "Hogiaan";
+        PASSWORD = "12345678";
     }
 
     private static Connection realConnection;
